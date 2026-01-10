@@ -60,7 +60,7 @@ abstract class BaseIntegrationTest {
         resolveEndpoint = "http://localhost:$port/api/v1/urls"
         println("Base URL for tests: $baseUrl")
         urlRepository.deleteAll()
-        redisTemplate.connectionFactory?.connection?.flushDb()
+        redisTemplate.connectionFactory?.connection?.serverCommands()?.flushDb()
     }
 
     val headers: HttpHeaders =
