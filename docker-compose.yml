@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  mysql-test:
+    container_name: tiny_url_service_mysql_test
+    image: mysql:8.0
+    ports:
+      - "63490:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: tiny_url_service_test
+
+  mysql-local:
+    container_name: tiny_url_service_mysql_local
+    image: mysql:8.0
+    ports:
+      - "3106:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: tiny_url_service_local
+
+  redis:
+    container_name: tiny_url_service_redis
+    image: redis:7.2
+    ports:
+      - "6379:6379"
+    tmpfs:
+      - /data
