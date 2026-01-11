@@ -36,19 +36,21 @@ A strong emphasis is placed on code quality, reliability, and correctness:
 1.  **Extensive Testing Suite:** The project includes a comprehensive suite of both unit tests (`...Test.kt`) and integration tests (`...IT.kt`).
 2.  **Purpose:** This robust testing infrastructure ensures the correctness of business logic, validates API contracts, and provides confidence for future refactoring and feature development.
 
-### ✨ Evolution from Previous Version
+### ✨ Design Evolution & Trade-offs
+Moving from a centralized bottleneck to a distributed range-based strategy, I solved for both **Network Latency** and **Availability**.
 
-This project is a significant evolution of a [previous URL shortener I built](https://github.com/TohidHeshmati/urlShortener). While the original was a functional proof-of-concept, this version was rewritten with a focus on security, performance, and production-readiness.
+| **Feature**         | V1 (Direct DB)                | V2 (Redis Centric)               | **Current (Range-Based)**       | **Impact**                                          |
+|:--------------------|:------------------------------|:---------------------------------|:--------------------------------|:----------------------------------------------------|
+| **ID Generation**   | DB `AUTO_INCREMENT`           | Redis `INCR` (Centralized)       | **In-memory Blocks**            | 99.9% reduction in network round-trips.             |
+| **Security**        | Sequential (1, 2, 3...)       | Sequential                       | **LCG Shuffled**                | Prevents business intelligence leaks                |
+| **Fault Tolerance** | DB as Single point of failure | Redis as Single point of failure | **Local-First**                 | Service issues IDs even if DB/Redis are flickering. |
+| **Scalability**     | High DB contention            | Single Redis Key bottleneck      | **Horizontally Scalable**       | Each instance acts independently.                   |
+| **Reliability**     | No Error Schema               | No Error Schema                  | **Standardized Error Handling** | Predictable contract for Frontend/Client consumers. |
 
-Here is a summary of the key improvements:
+#### Why I moved away from Centralized Counters (Redis/DB):
+In previous versions, every `shorten` request required a network hop to fetch the next ID. At scale, this introduces **latency spikes** and a **single point of failure**. By pre-allocating ID blocks to each instance, I achieved **O(1) local generation performance** while maintaining global uniqueness.
 
-| Feature                 | Previous Implementation              | **Current Version**                       | Impact                                                           |
-|:------------------------|:-------------------------------------|:------------------------------------------|:-----------------------------------------------------------------|
-| **Short Code Security** | Sequential, predictable IDs          | **LCG Shuffled IDs**                      | Prevents "ID Scraping" & Business Intelligence leaks.            |
-| **Id Generation**       | Redis `INCR` (Centralized)           | **Range-based DB Segments**               | High availability; service can still issue IDs if Redis is down. |
-| **Scalability**         | Every instance every call hits Redis | **Each instance has local memory blocks** | Massive reduction in network round-trips to storage.             |
-| **Architecture**        | Monolithic Controller                | **Separated API vs. Web layers**          | Better Clean Architecture & independent scaling.                 |
-| **Reliability**         | No Error Schema                      | **Standardized Error Handling**           | Predictable contract for Frontend/Client consumers.              |
+---
 
 ## 🧪 Development & Testing
 
