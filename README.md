@@ -65,13 +65,40 @@ Here is a summary of the key improvements:
 | `make health`                 | Checks the health of the application.                               |
 | `make shorten url=<url here>` | Shortens a sample URL. If no URL is provided, it uses `https://example.com`. |
 
+## URL Creation Flow
+```mermaid
+graph TD
+    Client[Client <br/><i>Web Browser, curl</i>] -- "HTTP POST /api/v1/url" --> Controller[UrlApiController]
+    Controller -- "Calls UrlService" --> Service[UrlService]
+    
+    Service --> SCG[ShortCodeGenerator]
+    Service --> Repos[UrlRepository]
+    
+    SCG -- "Get unique ID" --> SeqRepo[SequenceRepository]
+    SeqRepo --> DB[(Database)]
+    
+    Repos -- "Save Url entity" --> DB
+```
+
+## Short URL Redirection Flow
+```mermaid
+graph TD
+    ClientR[Client] -- "HTTP GET /{shortCode}" --> RedirCtrl[RedirectController]
+    RedirCtrl --> Resolv[UrlResolverService]
+    
+    Resolv -- "1. Check Cache" --> Cache[[Cache: Redis]]
+    Resolv -- "2. Cache Miss: Query" --> RepoR[UrlRepository]
+    
+    RepoR --> DBR[(Database)]
+    Cache -.->|If found| Resolv
+```
+
 ### ✨ Features & Limitations
 ##### Features
 - ✅ Base62 Encoding: Short, URL-friendly codes.
 - ✅ Expiration Support: Links automatically expire based on user input.
 - ✅ Global Error Handling: Consistent JSON error responses.
 - ✅ Flyway Migrations: Versioned database schema.
-
 ##### Roadmap
 - 🚧 Custom aliases (e.g., /my-promo-link).
 - 🚧 Rate limiting per IP.
