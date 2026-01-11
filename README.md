@@ -80,6 +80,28 @@ graph TD
     Repos -- "Save Url entity" --> DB
 ```
 
+## Id generation flow to save db travels
+#### this way every instance gets a block of id and does not need to call DB saving a lot of calls and time for us
+```mermaid
+graph TD
+    subgraph "SequenceRepository: Block Allocation Logic"
+        direction TB
+        B(ShortCodeGenerator) -- "1. Request numerical ID" --> C{Has unused ID in memory?}
+        
+        %% The Fast Path
+        C -- "YES (Fast Path)" --> D["2a. Increment currentId in memory"]
+        D --> E{ID Ready}
+
+        %% The Slow Path (Block Depleted)
+        C -- "NO (Block Depleted)" --> F["2b. Request NEW BLOCK from DB"]
+        F -- "UPDATE sequence_table SET val = val + 1000" --> G[(Database)]
+        G -- "Return new range end" --> H["3b. Refresh in-memory range"]
+        H --> E
+    end
+
+    E -- "4. Return unique numerical ID" --> I(ShortCodeGenerator)
+```
+
 ## Short URL Redirection Flow
 ```mermaid
 graph TD
