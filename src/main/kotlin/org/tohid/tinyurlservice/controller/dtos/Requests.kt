@@ -11,6 +11,14 @@ import java.time.Instant
 data class ShortenResponseDTO(
     val shortenedUrl: String,
     val expiryDate: Instant? = null,
+    val totalClickCount: Long = 0,
+)
+
+data class UrlResponse(
+    val shortCode: String,
+    val originalUrl: String,
+    val createdAt: Instant,
+    val totalClickCount: Long,
 )
 
 data class ShortenRequestDTO(

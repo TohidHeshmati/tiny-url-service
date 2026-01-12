@@ -22,13 +22,13 @@ class UrlResolverServiceIT : BaseIntegrationTest() {
             ),
         )
 
-        val firsResolveFromDB = urlResolverService.resolve(expectedShortUrl)
+        val firsResolveFromDB = urlResolverService.resolveAndRecordClick(expectedShortUrl)
         assert(firsResolveFromDB.originalUrl == originalUrl)
 
         urlRepository.deleteAll()
         assert(urlRepository.count() == 0L)
 
-        val secondResolveFromCache = urlResolverService.resolve(expectedShortUrl)
+        val secondResolveFromCache = urlResolverService.resolveAndRecordClick(expectedShortUrl)
         assert(secondResolveFromCache.originalUrl == originalUrl)
     }
 
@@ -46,7 +46,7 @@ class UrlResolverServiceIT : BaseIntegrationTest() {
 
         val exception =
             assertThrows<NotFoundException> {
-                urlResolverService.resolve(shortUrl)
+                urlResolverService.resolveAndRecordClick(shortUrl)
             }
         assertEquals("Short URL has expired: $shortUrl", exception.message)
 

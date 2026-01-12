@@ -6,6 +6,8 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import jakarta.validation.Valid
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -17,6 +19,7 @@ import org.tohid.tinyurlservice.controller.dtos.ErrorResponseDTO
 import org.tohid.tinyurlservice.controller.dtos.ResolveResponseDTO
 import org.tohid.tinyurlservice.controller.dtos.ShortenRequestDTO
 import org.tohid.tinyurlservice.controller.dtos.ShortenResponseDTO
+import org.tohid.tinyurlservice.controller.dtos.UrlResponse
 import org.tohid.tinyurlservice.service.UrlResolverService
 import org.tohid.tinyurlservice.service.UrlService
 import java.net.URI
@@ -51,6 +54,10 @@ class UrlApiController(
         return ResponseEntity.created(URI.create(shortenResponse.shortenedUrl)).body(shortenResponse)
     }
 
+    @GetMapping
+    @Operation(summary = "Get all URLs", description = "Returns a paginated list of all URLs")
+    fun getAllUrls(pageable: Pageable): ResponseEntity<Page<UrlResponse>> = ResponseEntity.ok(urlService.getAllUrls(pageable))
+
     @GetMapping("/{shortUrl}")
     @Operation(summary = "Resolve a short URL", description = "Returns metadata for a given short URL")
     @ApiResponses(
@@ -70,5 +77,5 @@ class UrlApiController(
     )
     fun resolve(
         @PathVariable shortUrl: String,
-    ): ResponseEntity<ResolveResponseDTO> = ResponseEntity.ok(urlResolverService.resolve(shortUrl))
+    ): ResponseEntity<ResolveResponseDTO> = ResponseEntity.ok(urlResolverService.resolveAndRecordClick(shortUrl))
 }

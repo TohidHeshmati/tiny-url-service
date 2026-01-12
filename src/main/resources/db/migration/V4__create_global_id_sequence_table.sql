@@ -1,5 +1,5 @@
 -- this is where services get their block of ids
-CREATE TABLE global_id_sequence
+CREATE TABLE IF NOT EXISTS global_id_sequence
 (
     next_block_start BIGINT NOT NULL
 );

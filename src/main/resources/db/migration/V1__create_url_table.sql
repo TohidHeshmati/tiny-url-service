@@ -1,5 +1,5 @@
 -- Create a table to store URLs with their original and shortened versions
-CREATE TABLE url
+CREATE TABLE IF NOT EXISTS url
 (
     id           BIGINT AUTO_INCREMENT PRIMARY KEY,
     original_url VARCHAR(512) NOT NULL UNIQUE,

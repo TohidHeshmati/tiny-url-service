@@ -1,2 +1,2 @@
 -- Create a table to store URLs with their original and shortened versions
-CREATE INDEX idx_short_url ON url(short_url);
+ALTER TABLE url ADD INDEX idx_short_url (short_url);

@@ -7,6 +7,8 @@ import org.mockito.kotlin.whenever
 import org.tohid.tinyurlservice.controller.dtos.ShortenRequestDTO
 import org.tohid.tinyurlservice.controller.dtos.ShortenResponseDTO
 import org.tohid.tinyurlservice.domain.Url
+import org.tohid.tinyurlservice.repository.UrlDailyClickRepository
+import org.tohid.tinyurlservice.repository.UrlHourlyClickRepository
 import org.tohid.tinyurlservice.repository.UrlRepository
 import kotlin.test.assertEquals
 
@@ -14,12 +16,16 @@ class UrlServiceTest {
     private val urlRepository: UrlRepository = mock()
     private val urlResolverService: UrlResolverService = mock()
     private val shortCodeGenerator: ShortCodeGenerator = mock()
+    private val dailyClickRepository: UrlDailyClickRepository = mock()
+    private val hourlyClickRepository: UrlHourlyClickRepository = mock()
     private val testBaseUrl = "http://tohid-test-env.com"
     private val urlService =
         UrlService(
             urlRepository = urlRepository,
             urlResolverService = urlResolverService,
             shortCodeGenerator = shortCodeGenerator,
+            dailyClickRepository = dailyClickRepository,
+            hourlyClickRepository = hourlyClickRepository,
             baseUrl = testBaseUrl,
         )
 

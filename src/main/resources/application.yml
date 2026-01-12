@@ -38,6 +38,8 @@ springdoc:
 url:
   cleanup:
     cron: "0 0 2 * * *"
+  processing:
+    cron: "0 * * * * *"
 
 block-size: 1000
 

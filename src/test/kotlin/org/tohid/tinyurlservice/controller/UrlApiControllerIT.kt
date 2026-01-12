@@ -293,4 +293,19 @@ class UrlApiControllerIT : BaseIntegrationTest() {
             assertThat(response.body?.shortenedUrl).isNotNull()
         }
     }
+
+    @Test
+    fun `gets all URLs paginated`() {
+        urlRepository.save(makeUrl(shortUrl = "url1"))
+        urlRepository.save(makeUrl(shortUrl = "url2"))
+
+        val response = restTemplate.getForEntity("/api/v1/urls?page=0&size=1", String::class.java)
+
+        assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+        assertThat(response.headers.contentType).isEqualTo(MediaType.APPLICATION_JSON)
+
+        val body = objectMapper.readTree(response.body)
+        assertThat(body["total_elements"].asInt()).isEqualTo(2)
+        assertThat(body["content"].size()).isEqualTo(1)
+    }
 }

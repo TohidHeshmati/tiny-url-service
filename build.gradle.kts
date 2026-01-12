@@ -9,7 +9,7 @@ plugins {
     id("io.spring.dependency-management") version "1.1.7"
 
     // Tools
-    id("org.flywaydb.flyway") version "9.22.0"
+    id("org.flywaydb.flyway") version "11.20.1"
     id("org.jlleitschuh.gradle.ktlint") version "14.0.1"
 }
 
@@ -25,6 +25,18 @@ java {
 
 repositories {
     mavenCentral()
+}
+
+
+
+flyway {
+    url = "jdbc:mysql://localhost:3106/tiny_url_service_local"
+    user = "root"
+    password = "root"
+    locations = arrayOf("filesystem:src/main/resources/db/migration")
+    dependencies {
+        implementation("mysql:mysql-connector-java:8.0.33")
+    }
 }
 
 // Kotlin
