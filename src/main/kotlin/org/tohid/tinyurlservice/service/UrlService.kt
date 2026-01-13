@@ -16,6 +16,7 @@ class UrlService(
     private val urlRepository: UrlRepository,
     private val urlResolverService: UrlResolverService,
     private val shortCodeGenerator: ShortCodeGenerator,
+    private val analyticsService: UrlAnalyticsService,
     @Value("\${base-url}") private val baseUrl: String,
 ) {
     fun shorten(request: ShortenRequestDTO): ShortenResponseDTO {
@@ -36,6 +37,9 @@ class UrlService(
 
     fun redirectsByShortUrl(shortUrl: String): ResponseEntity<Void> {
         val url = urlResolverService.resolve(shortUrl)
+
+        analyticsService.incrementClickCount(url.id)
+
         val location = URI.create(url.originalUrl)
         val status =
             if (url.expiryDate != null) {

@@ -8,11 +8,6 @@ import org.tohid.tinyurlservice.utils.SafeInstantDeserializer
 import org.tohid.tinyurlservice.validators.FutureInstant
 import java.time.Instant
 
-data class ShortenResponseDTO(
-    val shortenedUrl: String,
-    val expiryDate: Instant? = null,
-)
-
 data class ShortenRequestDTO(
     @field:NotBlank(message = "URL must not be blank")
     @field:URL(message = "Must be a valid URL")

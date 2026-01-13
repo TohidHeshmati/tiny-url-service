@@ -12,7 +12,7 @@ import java.time.Instant.now
 class RedirectControllerIT : BaseIntegrationTest() {
     @Test
     fun `redirects permanently status=301 for shortened URL without expiry date`() {
-        val savedUrl = urlRepository.save(makeUrl())
+        val savedUrl = urlRepository.save(makeUrl(expiryDate = null))
 
         val response: ResponseEntity<String> =
             redirectSafeRestTemplate.exchange(

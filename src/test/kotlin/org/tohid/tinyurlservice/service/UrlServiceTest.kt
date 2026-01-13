@@ -14,12 +14,14 @@ class UrlServiceTest {
     private val urlRepository: UrlRepository = mock()
     private val urlResolverService: UrlResolverService = mock()
     private val shortCodeGenerator: ShortCodeGenerator = mock()
+    private val analyticsService: UrlAnalyticsService = mock()
     private val testBaseUrl = "http://tohid-test-env.com"
     private val urlService =
         UrlService(
             urlRepository = urlRepository,
             urlResolverService = urlResolverService,
             shortCodeGenerator = shortCodeGenerator,
+            analyticsService = analyticsService,
             baseUrl = testBaseUrl,
         )
 

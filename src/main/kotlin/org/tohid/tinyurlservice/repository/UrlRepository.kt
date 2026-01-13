@@ -20,4 +20,8 @@ interface UrlRepository : CrudRepository<Url, Long> {
         "DELETE FROM Url u WHERE u.expiryDate IS NOT NULL AND u.expiryDate < :time",
     )
     fun deleteByExpiryDateBefore(time: Instant): Int
+
+    @Modifying
+    @Query("UPDATE Url u SET u.totalClickCount = u.totalClickCount + 1 WHERE u.id = :id")
+    fun incrementTotalClickCount(id: Long)
 }

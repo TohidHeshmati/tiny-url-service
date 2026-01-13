@@ -17,6 +17,7 @@ import org.tohid.tinyurlservice.controller.dtos.ErrorResponseDTO
 import org.tohid.tinyurlservice.controller.dtos.ResolveResponseDTO
 import org.tohid.tinyurlservice.controller.dtos.ShortenRequestDTO
 import org.tohid.tinyurlservice.controller.dtos.ShortenResponseDTO
+import org.tohid.tinyurlservice.domain.toResolveResponseDTO
 import org.tohid.tinyurlservice.service.UrlResolverService
 import org.tohid.tinyurlservice.service.UrlService
 import java.net.URI
@@ -70,5 +71,5 @@ class UrlApiController(
     )
     fun resolve(
         @PathVariable shortUrl: String,
-    ): ResponseEntity<ResolveResponseDTO> = ResponseEntity.ok(urlResolverService.resolve(shortUrl))
+    ): ResponseEntity<ResolveResponseDTO> = ResponseEntity.ok(urlResolverService.resolve(shortUrl).toResolveResponseDTO())
 }

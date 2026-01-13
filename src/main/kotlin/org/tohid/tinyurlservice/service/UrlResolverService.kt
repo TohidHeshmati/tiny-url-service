@@ -2,7 +2,6 @@ package org.tohid.tinyurlservice.service
 
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
-import org.tohid.tinyurlservice.controller.dtos.ResolveResponseDTO
 import org.tohid.tinyurlservice.domain.Url
 import org.tohid.tinyurlservice.domain.isExpired
 import org.tohid.tinyurlservice.exception.NotFoundException
@@ -13,7 +12,7 @@ class UrlResolverService(
     private val urlRepository: UrlRepository,
 ) {
     @Cacheable(cacheNames = ["short-urls"], key = "#shortUrl")
-    fun resolve(shortUrl: String): ResolveResponseDTO {
+    fun resolve(shortUrl: String): Url {
         val url =
             urlRepository.findByShortUrl(shortUrl)
                 ?: throw NotFoundException("Short URL not found: $shortUrl")
@@ -23,10 +22,7 @@ class UrlResolverService(
             throw NotFoundException("Short URL has expired: $shortUrl")
         }
 
-        return ResolveResponseDTO(
-            originalUrl = url.originalUrl,
-            expiryDate = url.expiryDate,
-        )
+        return url
     }
 
     @Cacheable(cacheNames = ["original-urls"], key = "#originalUrl", unless = "#result == null")

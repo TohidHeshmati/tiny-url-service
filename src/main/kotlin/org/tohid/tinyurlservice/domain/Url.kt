@@ -6,6 +6,7 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
+import org.tohid.tinyurlservice.controller.dtos.ResolveResponseDTO
 import org.tohid.tinyurlservice.controller.dtos.ShortenResponseDTO
 import java.io.Serializable
 import java.time.Instant
@@ -25,12 +26,21 @@ data class Url(
     val createdAt: Instant = now(),
     @Column(name = "expiry_date", nullable = true)
     val expiryDate: Instant? = null,
+    @Column(name = "total_click_count", nullable = false)
+    val totalClickCount: Long = 0,
 ) : Serializable
 
 fun Url.toShortenResponseDTO(baseUrl: String) =
     ShortenResponseDTO(
         shortenedUrl = "$baseUrl/$shortUrl",
         expiryDate = expiryDate,
+    )
+
+fun Url.toResolveResponseDTO() =
+    ResolveResponseDTO(
+        originalUrl = originalUrl,
+        expiryDate = expiryDate,
+        totalClickCount = totalClickCount,
     )
 
 fun Url.isExpired(): Boolean = expiryDate?.let { now().isAfter(it) } ?: false
