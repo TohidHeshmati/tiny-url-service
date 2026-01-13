@@ -1,6 +1,6 @@
 # TinyURL Service 🔗
 
-> A minimal production-ready URL shortener designed for low-latency redirections and high scalability. 🚀
+> A minimal semi production-ready URL shortener designed for low-latency redirections and high scalability. 🚀
 
 ## 🚀 Quick start
 Simply use `make run` and check if it is up and running from swagger ui.
@@ -139,6 +139,8 @@ graph TD
 ![JUnit](https://img.shields.io/badge/JUnit-5-important?logo=java)
 ![Ktlint](https://img.shields.io/badge/Ktlint-Code%20Formatter-blueviolet?logo=kotlin)
 ![Flyway](https://img.shields.io/badge/Flyway-DB%20Migration-orange?logo=flyway)
+
+# Under construction --> Analytics
 
 ### Pre-requisites
 - Java 21

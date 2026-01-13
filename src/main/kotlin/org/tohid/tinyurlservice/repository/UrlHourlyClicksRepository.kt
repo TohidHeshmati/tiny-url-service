@@ -5,11 +5,19 @@ import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.CrudRepository
 import org.springframework.stereotype.Repository
 import org.springframework.transaction.annotation.Transactional
+import org.tohid.tinyurlservice.domain.Url
 import org.tohid.tinyurlservice.domain.UrlHourlyClicks
+import java.time.Instant
 import java.time.LocalDateTime
 
 @Repository
 interface UrlHourlyClicksRepository : CrudRepository<UrlHourlyClicks, Long> {
+    fun findAllByUrlAndClickHourBetween(
+        url: Url,
+        start: Instant,
+        end: Instant,
+    ): List<UrlHourlyClicks>
+
     @Modifying
     @Transactional
     @Query(
