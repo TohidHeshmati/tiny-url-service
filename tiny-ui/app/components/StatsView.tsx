@@ -104,7 +104,12 @@ export default function StatsView() {
                     </div>
 
                     <div className="bg-white border rounded-xl p-4">
-                        <ClickChart data={stats.time_series.data_points} />
+                        <ClickChart
+                            data={stats.time_series.data_points}
+                            granularity={granularity}
+                            startDate={stats.time_series.from}
+                            endDate={stats.time_series.to}
+                        />
                     </div>
                 </div>
             )}

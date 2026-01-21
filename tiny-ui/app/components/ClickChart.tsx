@@ -9,7 +9,16 @@ import {
     XAxis,
     YAxis,
 } from "recharts";
-import { format } from "date-fns";
+import {
+    format,
+    eachDayOfInterval,
+    eachHourOfInterval,
+    isSameDay,
+    isSameHour,
+    parseISO,
+    startOfDay,
+    startOfHour
+} from "date-fns";
 
 interface DataPoint {
     timestamp: string;
@@ -18,10 +27,13 @@ interface DataPoint {
 
 interface ClickChartProps {
     data: DataPoint[];
+    granularity: "DAY" | "HOUR";
+    startDate: string;
+    endDate: string;
 }
 
-export default function ClickChart({ data }: ClickChartProps) {
-    if (!data || data.length === 0) {
+export default function ClickChart({ data, granularity, startDate, endDate }: ClickChartProps) {
+    if (!startDate || !endDate) {
         return (
             <div className="h-[300px] w-full flex items-center justify-center bg-gray-50 rounded-lg">
                 <p className="text-gray-400">No data available for this period</p>
@@ -29,19 +41,28 @@ export default function ClickChart({ data }: ClickChartProps) {
         );
     }
 
-    // Detect granularity based on time difference between first two points (heuristic)
-    // or just format generically.
-    // Let's check the distance between points.
-    const isHourly = data.length > 1 &&
-        (new Date(data[1].timestamp).getTime() - new Date(data[0].timestamp).getTime()) < 24 * 60 * 60 * 1000;
+    const start = parseISO(startDate);
+    const end = parseISO(endDate);
 
-    // Format data for display
-    const chartData = data.map((item) => {
-        const date = new Date(item.timestamp);
+    // Generate all intervals
+    const intervals = granularity === "DAY"
+        ? eachDayOfInterval({ start, end })
+        : eachHourOfInterval({ start, end });
+
+    // Map intervals to data, filling with 0 if no data point exists
+    const chartData = intervals.map((date) => {
+        // Find matching data point
+        const match = data.find((item) => {
+            const itemDate = parseISO(item.timestamp);
+            return granularity === "DAY"
+                ? isSameDay(date, itemDate)
+                : isSameHour(date, itemDate);
+        });
+
         return {
-            date: isHourly ? format(date, "HH:mm") : format(date, "MMM dd"),
-            clicks: item.clicks,
-            fullDate: format(date, "MMM dd, yyyy HH:mm"),
+            date: granularity === "HOUR" ? format(date, "HH:mm") : format(date, "MMM dd"),
+            clicks: match ? match.clicks : 0,
+            fullDate: format(date, "MMM dd, yyyy" + (granularity === "HOUR" ? " HH:mm" : "")),
         };
     });
 
@@ -57,7 +78,7 @@ export default function ClickChart({ data }: ClickChartProps) {
                         axisLine={false}
                         tick={{ fontSize: 12, fill: '#6B7280' }}
                         dy={10}
-                        minTickGap={30} // Prevent overlap for hourly data
+                        minTickGap={30}
                     />
                     <YAxis
                         tickLine={false}
