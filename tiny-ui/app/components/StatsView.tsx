@@ -4,12 +4,30 @@ import { useState } from "react";
 import ClickChart from "./ClickChart";
 import { format } from "date-fns";
 
-type Granularity = "DAY" | "HOUR";
+interface DataPoint {
+    timestamp: string;
+    clicks: number;
+    deviceClicks?: Record<string, number>;
+    device_clicks?: Record<string, number>;
+}
+
+interface UrlStatsResponse {
+    total_clicks: number;
+    long_url: string;
+    created_at: string;
+    time_series: {
+        from: string;
+        to: string;
+        data_points: DataPoint[];
+    };
+}
+
+type Granularity = "DAY" | "HOUR" | "MONTH";
 
 export default function StatsView() {
     const [shortCode, setShortCode] = useState("");
     const [granularity, setGranularity] = useState<Granularity>("DAY");
-    const [stats, setStats] = useState<any>(null);
+    const [stats, setStats] = useState<UrlStatsResponse | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
@@ -24,7 +42,8 @@ export default function StatsView() {
         setStats(null);
 
         try {
-            const response = await fetch(`http://localhost:8080/api/v1/urls/${shortCode}/stats?granularity=${granularity}`);
+            const apiGranularity = granularity === "MONTH" ? "DAY" : granularity;
+            const response = await fetch(`http://localhost:8080/api/v1/urls/${shortCode}/stats?granularity=${apiGranularity}`);
 
             if (!response.ok) {
                 if (response.status === 404) throw new Error("Short URL not found");
@@ -33,8 +52,8 @@ export default function StatsView() {
 
             const data = await response.json();
             setStats(data);
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : "An unknown error occurred");
         } finally {
             setLoading(false);
         }
@@ -68,6 +87,7 @@ export default function StatsView() {
                     >
                         <option value="DAY">Daily</option>
                         <option value="HOUR">Hourly</option>
+                        <option value="MONTH">Monthly</option>
                     </select>
                 </div>
 

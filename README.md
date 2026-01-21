@@ -179,7 +179,7 @@ graph TD
 
 - 🚧 Custom aliases (e.g., /my-promo-link).
 - 🚧 Rate limiting per IP.
-- 🚧 UI.
+- ✅ UI.
 
 ### 🛠Tech Stack
 
@@ -212,3 +212,34 @@ When running in the `local` profile, the application automatically seeds the dat
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
+### 💻 Frontend UI
+
+The project includes a modern React/Next.js frontend for easy interaction with the service.
+
+#### Running the UI
+
+1. Navigate to the UI directory:
+   ```bash
+   cd tiny-ui
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Run the development server:
+   ```bash
+   npm run dev
+   ```
+4. Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+#### 📸 Screenshots
+
+| **Dashboard** | **Daily Stats** |
+|:---:|:---:|
+| ![Main Page](assets/mainpage.png) | ![Daily Stats](assets/dailystat.png) |
+| **Simple interface to shorten URLs** | **Track daily clicks trend** |
+
+| **Hourly Details** | **Device Distribution** |
+|:---:|:---:|
+| ![Hourly Stats](assets/hourlysatat.png) | ![Monthly Device Stats](assets/monthstats.png) |
+| **Granular hourly traffic view** | **Monthly breakdown by device type** |

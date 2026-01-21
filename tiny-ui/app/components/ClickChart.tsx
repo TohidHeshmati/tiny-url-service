@@ -4,7 +4,10 @@ import {
     Bar,
     BarChart,
     CartesianGrid,
+    Cell,
     Legend,
+    Pie,
+    PieChart,
     ResponsiveContainer,
     Tooltip,
     XAxis,
@@ -27,7 +30,7 @@ interface DataPoint {
 
 interface ClickChartProps {
     data: DataPoint[];
-    granularity: "DAY" | "HOUR";
+    granularity: "DAY" | "HOUR" | "MONTH";
     startDate: string;
     endDate: string;
 }
@@ -51,23 +54,75 @@ export default function ClickChart({ data, granularity, startDate, endDate }: Cl
     const start = parseISO(startDate);
     const end = parseISO(endDate);
 
+    if (granularity === "MONTH") {
+        // Aggregate totals by device type across the entire range
+        const totals = {
+            DESKTOP: 0,
+            MOBILE: 0,
+            TABLET: 0,
+            OTHER: 0,
+        };
+
+        data.forEach(item => {
+            // device_clicks can be snake_case from backend
+            const devices = (item as DataPoint & { device_clicks?: Record<string, number> })?.device_clicks || item.deviceClicks || {};
+            totals.DESKTOP += devices["DESKTOP"] || 0;
+            totals.MOBILE += devices["MOBILE"] || 0;
+            totals.TABLET += devices["TABLET"] || 0;
+            totals.OTHER += devices["OTHER"] || 0;
+        });
+
+        const pieData = Object.entries(totals)
+            .map(([device, value]) => ({
+                name: device.charAt(0) + device.slice(1).toLowerCase(), // "Desktop"
+                value,
+                color: DEVICE_COLORS[device as keyof typeof DEVICE_COLORS]
+            }))
+            .filter(d => d.value > 0);
+
+        return (
+            <div className="h-[300px] w-full">
+                <h3 className="text-lg font-semibold text-gray-700 mb-4">Device Distribution</h3>
+                <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                        <Pie
+                            data={pieData}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            label={({ name, percent }: { name?: string; percent?: number }) => `${name || "Unknown"} ${((percent || 0) * 100).toFixed(0)}%`}
+                            outerRadius={100}
+                            dataKey="value"
+                        >
+                            {pieData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                        </Pie>
+                        <Tooltip />
+                        <Legend />
+                    </PieChart>
+                </ResponsiveContainer>
+            </div>
+        );
+    }
+
     // Generate all intervals
-    const intervals = granularity === "DAY"
-        ? eachDayOfInterval({ start, end })
-        : eachHourOfInterval({ start, end });
+    const intervals = granularity === "HOUR"
+        ? eachHourOfInterval({ start, end })
+        : eachDayOfInterval({ start, end });
 
     // Map intervals to data, filling with 0 if no data point exists
     const chartData = intervals.map((date) => {
         // Find matching data point
         const match = data.find((item) => {
             const itemDate = parseISO(item.timestamp);
-            return granularity === "DAY"
-                ? isSameDay(date, itemDate)
-                : isSameHour(date, itemDate);
+            return granularity === "HOUR"
+                ? isSameHour(date, itemDate)
+                : isSameDay(date, itemDate);
         });
 
         // backend returns device_clicks (snake_case)
-        const devices = (match as any)?.device_clicks || match?.deviceClicks || {};
+        const devices = (match as DataPoint & { device_clicks?: Record<string, number> })?.device_clicks || match?.deviceClicks || {};
 
         return {
             date: granularity === "HOUR" ? format(date, "HH:mm") : format(date, "MMM dd"),
