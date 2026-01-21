@@ -9,6 +9,11 @@ run:
 	@echo "🌱 Starting the application..."
 	./gradlew bootRun --args='--spring.profiles.active=local'
 
+run-ui:
+	@echo "🚀 Starting UI..."
+	@echo "👉 Open http://localhost:3000"
+	@cd tiny-ui && npm run dev
+
 
 # Usage: make shorten url=https://google.com
 shorten:
