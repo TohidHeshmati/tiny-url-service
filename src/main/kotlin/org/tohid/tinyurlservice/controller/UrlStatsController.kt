@@ -35,7 +35,14 @@ class UrlStatsController(
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) from: Instant?,
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) to: Instant?,
     ): ResponseEntity<UrlStatsResponseDTO> {
-        val fromDate = from ?: Instant.now().minus(30, ChronoUnit.DAYS)
+        val fromDate =
+            from ?: run {
+                if (granularity == Granularity.HOUR) {
+                    Instant.now().minus(1, ChronoUnit.DAYS)
+                } else {
+                    Instant.now().minus(30, ChronoUnit.DAYS)
+                }
+            }
         val toDate = to ?: Instant.now()
         val stats = urlService.getStatsForUrl(shortCode, granularity, fromDate, toDate)
         return ResponseEntity.ok(stats)
