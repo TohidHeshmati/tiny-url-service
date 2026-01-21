@@ -57,14 +57,14 @@ export default function StatsView() {
                         type="text"
                         placeholder="Enter short code (e.g., abc12)"
                         required
-                        className="flex-1 p-3 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none"
+                        className="flex-1 p-3 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none text-blue-800"
                         value={shortCode}
                         onChange={(e) => setShortCode(e.target.value)}
                     />
                     <select
                         value={granularity}
                         onChange={(e) => setGranularity(e.target.value as Granularity)}
-                        className="p-3 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none bg-white"
+                        className="p-3 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none bg-white text-blue-800"
                     >
                         <option value="DAY">Daily</option>
                         <option value="HOUR">Hourly</option>

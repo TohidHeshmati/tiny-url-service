@@ -41,8 +41,8 @@ export default function Home() {
         <button
           onClick={() => setActiveTab("create")}
           className={`px-6 py-2 rounded-md font-medium transition-colors ${activeTab === "create"
-              ? "bg-blue-600 text-white shadow-sm"
-              : "text-gray-600 hover:bg-gray-100"
+            ? "bg-blue-600 text-white shadow-sm"
+            : "text-gray-600 hover:bg-gray-100"
             }`}
         >
           Create New
@@ -50,8 +50,8 @@ export default function Home() {
         <button
           onClick={() => setActiveTab("stats")}
           className={`px-6 py-2 rounded-md font-medium transition-colors ${activeTab === "stats"
-              ? "bg-blue-600 text-white shadow-sm"
-              : "text-gray-600 hover:bg-gray-100"
+            ? "bg-blue-600 text-white shadow-sm"
+            : "text-gray-600 hover:bg-gray-100"
             }`}
         >
           View Statistics
@@ -67,7 +67,7 @@ export default function Home() {
               type="url"
               placeholder="Paste your long URL here..."
               required
-              className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none"
+              className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none text-blue-800"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
             />
