@@ -84,7 +84,9 @@ local generation performance** while maintaining global uniqueness.
 
 | Command                       | Action                                                                       |
 |-------------------------------|------------------------------------------------------------------------------|
-| `make run`                    | Starts the application and its dependencies (`mysql` and `redis`).           |
+| `make run-backend`            | Starts the backend application and its dependencies (`mysql` and `redis`).   |
+| `make run-frontend`           | Starts the Next.js frontend application.                                     |
+| `make run-all`                | Starts both backend and frontend concurrently.                               |
 | `make stop`                   | Stops the application and its dependencies.                                  |
 | `make test`                   | Runs the integration tests.                                                  |
 | `make build`                  | Builds the application JAR and a Docker image.                               |
@@ -194,6 +196,9 @@ graph TD
 ![JUnit](https://img.shields.io/badge/JUnit-5-important?logo=java)
 ![Ktlint](https://img.shields.io/badge/Ktlint-Code%20Formatter-blueviolet?logo=kotlin)
 ![Flyway](https://img.shields.io/badge/Flyway-DB%20Migration-orange?logo=flyway)
+![Next.js](https://img.shields.io/badge/Next.js-Frontend-black?logo=next.js)
+![React](https://img.shields.io/badge/React-Library-blue?logo=react)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind-Styling-38B2AC?logo=tailwind-css)
 
 #### 🛠 Development Data Seeding
 
@@ -209,6 +214,7 @@ When running in the `local` profile, the application automatically seeds the dat
 - Gradle (or Gradle Wrapper)
 - Docker (for running MySQL and Redis)
 - make
+- npm (for frontend)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -231,6 +237,12 @@ The project includes a modern React/Next.js frontend for easy interaction with t
    npm run dev
    ```
 4. Open [http://localhost:3000](http://localhost:3000) in your browser.
+   
+   > **💡 Tip:** To see the analytics visualization with seeded data, enter one of these short codes in the search box:
+   > - `0N6MIoU`
+   > - `02V71pQ`
+   > - `09CoWdf`
+   > - `0LEMExa`
 
 #### 📸 Screenshots
 

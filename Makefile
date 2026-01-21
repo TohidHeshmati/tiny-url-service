@@ -1,7 +1,9 @@
 .PHONY: run stop clean test build check format help logs
 
 # Default target
-run:
+run: run-backend
+
+run-backend:
 	@echo "🚀 Starting infrastructure..."
 	docker compose up -d
 	@echo "⏳ Waiting for MySQL to be ready..."
@@ -9,10 +11,21 @@ run:
 	@echo "🌱 Starting the application..."
 	./gradlew bootRun --args='--spring.profiles.active=local'
 
-run-ui:
+run-frontend:
 	@echo "🚀 Starting UI..."
 	@echo "👉 Open http://localhost:3000"
 	@cd tiny-ui && npm run dev
+
+run-all:
+	@echo "🚀 Starting infrastructure..."
+	@docker compose up -d
+	@echo "⏳ Waiting for database..."
+	@sleep 10
+	@echo "🌱 Starting Backend & Frontend..."
+	@echo "⚠️  Note: Logs will be mixed. Use Ctrl+C to stop both."
+	@trap 'kill 0' EXIT; \
+	./gradlew bootRun --args='--spring.profiles.active=local' & \
+	cd tiny-ui && npm run dev
 
 
 # Usage: make shorten url=https://google.com
