@@ -32,3 +32,5 @@ CREATE TABLE url_hourly_clicks
 
 ALTER TABLE url_daily_clicks ADD CONSTRAINT uq_url_daily_device UNIQUE (url_id, click_date, device_type);
 ALTER TABLE url_hourly_clicks ADD CONSTRAINT uq_url_hourly_device UNIQUE (url_id, click_hour, device_type);
+ALTER TABLE url_daily_clicks DROP INDEX url_id;
+ALTER TABLE url_hourly_clicks DROP INDEX url_id;

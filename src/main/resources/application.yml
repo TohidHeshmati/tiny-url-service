@@ -9,7 +9,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: true
+    show-sql: false
 
   flyway:
     enabled: true
@@ -21,11 +21,6 @@ spring:
     redis:
       host: localhost
       port: 6379
-
-logging:
-  level:
-    org.hibernate.SQL: INFO
-    org.springframework.web: INFO
 
 springdoc:
   api-docs:

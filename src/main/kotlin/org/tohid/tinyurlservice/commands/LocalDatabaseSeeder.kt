@@ -17,6 +17,7 @@ import java.time.ZoneOffset
 import java.time.temporal.ChronoUnit
 import kotlin.random.Random
 import kotlin.time.ExperimentalTime
+import java.time.Instant
 
 /* * LocalDatabaseSeeder is a CommandLineRunner that seeds the local database with initial URLs.
  * It runs only when the application is started with the "local" profile.
@@ -88,30 +89,49 @@ class LocalDatabaseSeeder(
             for (d in 0..30) {
                 val day = now.minus(d.toLong(), ChronoUnit.DAYS)
                 val date = LocalDate.ofInstant(day, ZoneOffset.UTC)
-                var dailyCount = 0L
+
+                // Key: Pair(Hour, Device) -> Value: Count
+                // This map ensures we only ever have ONE entry per (Hour + Device)
+                val hourlyMap = mutableMapOf<Pair<Instant, DeviceType>, Long>()
 
                 for (h in 0..23) {
-                    if (Random.nextDouble() < 0.3) {
-                        val count = Random.nextLong(1, 10)
+                    if (Random.nextDouble() < 0.4) {
                         val hourInstant = date.atStartOfDay(ZoneOffset.UTC).toInstant().plus(h.toLong(), ChronoUnit.HOURS)
-                        val deviceType = DeviceType.entries.toTypedArray().random()
 
-                        hourlyClicks.add(
-                            UrlHourlyClicks(
-                                urlId = url.id,
-                                clickHour = hourInstant,
-                                count = count,
-                                deviceType = deviceType,
-                            ),
-                        )
-                        dailyCount += count
+                        // Allow 1 to 3 different devices to have clicks in the same hour
+                        val selectedDevices = DeviceType.entries.shuffled().take(Random.nextInt(1, 4))
+
+                        selectedDevices.forEach { device ->
+                            val count = Random.nextLong(1, 10)
+                            hourlyMap[hourInstant to device] = count
+                            urlTotal += count
+                        }
                     }
                 }
 
-                if (dailyCount > 0) {
-                    dailyClicks.add(UrlDailyClicks(urlId = url.id, clickDate = date, count = dailyCount, deviceType = DeviceType.OTHER))
-                    urlTotal += dailyCount
+                // 1. Convert Map to Hourly Entities
+                hourlyMap.forEach { (key, count) ->
+                    val (hour, device) = key
+                    hourlyClicks.add(UrlHourlyClicks(
+                        urlId = url.id,
+                        clickHour = hour,
+                        count = count,
+                        deviceType = device
+                    ))
                 }
+
+                // 2. Aggregate by Device for Daily Totals
+                hourlyMap.entries
+                    .groupBy { it.key.second } // Group by DeviceType
+                    .forEach { (device, entries) ->
+                        val totalForDevice = entries.sumOf { it.value }
+                        dailyClicks.add(UrlDailyClicks(
+                            urlId = url.id,
+                            clickDate = date,
+                            count = totalForDevice,
+                            deviceType = device
+                        ))
+                    }
             }
 
             if (urlTotal > 0) {
@@ -119,9 +139,10 @@ class LocalDatabaseSeeder(
             }
         }
 
+        // Batch save for performance
         urlHourlyClicksRepository.saveAll(hourlyClicks)
         urlDailyClicksRepository.saveAll(dailyClicks)
         urlRepository.saveAll(updatedUrls)
-        println("Statistics seeded: ${hourlyClicks.size} hourly entries, ${dailyClicks.size} daily entries.")
+        println("Seeding complete: ${hourlyClicks.size} hourly and ${dailyClicks.size} daily records created.")
     }
 }
