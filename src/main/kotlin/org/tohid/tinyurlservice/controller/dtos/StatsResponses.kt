@@ -25,4 +25,5 @@ data class TimeSeriesData(
 data class DataPoint(
     val timestamp: Instant,
     val clicks: Long,
+    val deviceClicks: Map<String, Long> = emptyMap(),
 )

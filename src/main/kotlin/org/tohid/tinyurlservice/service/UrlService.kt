@@ -81,12 +81,26 @@ class UrlService(
                             url.id,
                             fromDate.truncatedTo(ChronoUnit.DAYS).atZone(java.time.ZoneOffset.UTC).toLocalDate(),
                             toDate.truncatedTo(ChronoUnit.DAYS).atZone(java.time.ZoneOffset.UTC).toLocalDate(),
-                        ).map { DataPoint(it.clickDate.atStartOfDay().toInstant(java.time.ZoneOffset.UTC), it.count) }
+                        ).groupBy { it.clickDate }
+                        .map { (date, clicks) ->
+                            DataPoint(
+                                timestamp = date.atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
+                                clicks = clicks.sumOf { it.count },
+                                deviceClicks = clicks.groupBy { it.deviceType.name }.mapValues { it.value.sumOf { c -> c.count } },
+                            )
+                        }
 
                 Granularity.HOUR ->
                     urlHourlyClicksRepository
                         .findAllByUrlIdAndClickHourBetween(url.id, fromDate, toDate)
-                        .map { DataPoint(it.clickHour, it.count) }
+                        .groupBy { it.clickHour }
+                        .map { (hour, clicks) ->
+                            DataPoint(
+                                timestamp = hour,
+                                clicks = clicks.sumOf { it.count },
+                                deviceClicks = clicks.groupBy { it.deviceType.name }.mapValues { it.value.sumOf { c -> c.count } },
+                            )
+                        }
             }
 
         return UrlStatsResponseDTO(
