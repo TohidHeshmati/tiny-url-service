@@ -20,8 +20,8 @@ interface UrlDailyClicksRepository : CrudRepository<UrlDailyClicks, Long> {
     @Transactional
     @Query(
         value = """
-        INSERT INTO url_daily_clicks (url_id, click_date, count, created_at, updated_at)
-        VALUES (:urlId, :date, 1, NOW(), NOW())
+        INSERT INTO url_daily_clicks (url_id, click_date, device_type, count, created_at, updated_at)
+        VALUES (:urlId, :date, :deviceType, 1, NOW(), NOW())
         ON DUPLICATE KEY UPDATE count = count + 1, updated_at = NOW()
     """,
         nativeQuery = true,
@@ -29,5 +29,6 @@ interface UrlDailyClicksRepository : CrudRepository<UrlDailyClicks, Long> {
     fun incrementClick(
         urlId: Long,
         date: LocalDate,
+        deviceType: String,
     )
 }

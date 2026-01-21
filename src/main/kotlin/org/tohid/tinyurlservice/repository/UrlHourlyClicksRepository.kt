@@ -20,8 +20,8 @@ interface UrlHourlyClicksRepository : CrudRepository<UrlHourlyClicks, Long> {
     @Transactional
     @Query(
         value = """
-        INSERT INTO url_hourly_clicks (url_id, click_hour, count, created_at, updated_at)
-        VALUES (:urlId, :hour, 1, NOW(), NOW())
+        INSERT INTO url_hourly_clicks (url_id, click_hour, device_type, count, created_at, updated_at)
+        VALUES (:urlId, :hour, :deviceType, 1, NOW(), NOW())
         ON DUPLICATE KEY UPDATE count = count + 1, updated_at = NOW()
     """,
         nativeQuery = true,
@@ -29,5 +29,6 @@ interface UrlHourlyClicksRepository : CrudRepository<UrlHourlyClicks, Long> {
     fun incrementClick(
         urlId: Long,
         hour: Instant,
+        deviceType: String,
     )
 }

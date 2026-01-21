@@ -33,5 +33,9 @@ class RedirectController(
     )
     fun redirect(
         @PathVariable shortUrl: String,
-    ): ResponseEntity<Void> = urlService.redirectsByShortUrl(shortUrl)
+        request: jakarta.servlet.http.HttpServletRequest,
+    ): ResponseEntity<Void> {
+        val userAgent = request.getHeader("User-Agent") ?: ""
+        return urlService.redirectsByShortUrl(shortUrl, userAgent)
+    }
 }

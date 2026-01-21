@@ -3,6 +3,7 @@ package org.tohid.tinyurlservice.commands
 import org.springframework.boot.CommandLineRunner
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
+import org.tohid.tinyurlservice.domain.DeviceType
 import org.tohid.tinyurlservice.domain.Url
 import org.tohid.tinyurlservice.domain.UrlDailyClicks
 import org.tohid.tinyurlservice.domain.UrlHourlyClicks
@@ -93,14 +94,22 @@ class LocalDatabaseSeeder(
                     if (Random.nextDouble() < 0.3) {
                         val count = Random.nextLong(1, 10)
                         val hourInstant = date.atStartOfDay(ZoneOffset.UTC).toInstant().plus(h.toLong(), ChronoUnit.HOURS)
+                        val deviceType = DeviceType.entries.toTypedArray().random()
 
-                        hourlyClicks.add(UrlHourlyClicks(urlId = url.id, clickHour = hourInstant, count = count))
+                        hourlyClicks.add(
+                            UrlHourlyClicks(
+                                urlId = url.id,
+                                clickHour = hourInstant,
+                                count = count,
+                                deviceType = deviceType,
+                            ),
+                        )
                         dailyCount += count
                     }
                 }
 
                 if (dailyCount > 0) {
-                    dailyClicks.add(UrlDailyClicks(urlId = url.id, clickDate = date, count = dailyCount))
+                    dailyClicks.add(UrlDailyClicks(urlId = url.id, clickDate = date, count = dailyCount, deviceType = DeviceType.OTHER))
                     urlTotal += dailyCount
                 }
             }

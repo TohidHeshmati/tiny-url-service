@@ -51,12 +51,14 @@ val apacheClientVersion = "5.5"
 // Validation
 val hibernateValidatorVersion = "8.0.2.Final"
 val jakartaValidationVersion = "3.1.1"
+val yauaaVersion = "7.28.1"
 
 dependencies {
     // --- Core ---
     implementation("org.springframework.boot:spring-boot-starter-web:$springVersion")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
     implementation("org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion")
+    implementation("nl.basjes.parse.useragent:yauaa:$yauaaVersion")
 
     // --- Spring Data & Persistence ---
     implementation("org.springframework.boot:spring-boot-starter-data-jpa:$springVersion")

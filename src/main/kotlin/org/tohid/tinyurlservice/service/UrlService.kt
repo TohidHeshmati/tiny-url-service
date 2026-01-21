@@ -46,10 +46,13 @@ class UrlService(
         return url.toShortenResponseDTO(baseUrl)
     }
 
-    fun redirectsByShortUrl(shortUrl: String): ResponseEntity<Void> {
+    fun redirectsByShortUrl(
+        shortUrl: String,
+        userAgent: String,
+    ): ResponseEntity<Void> {
         val url = urlResolverService.resolve(shortUrl)
 
-        analyticsService.incrementClickCount(url.id)
+        analyticsService.incrementClickCount(url.id, userAgent)
 
         val location = URI.create(url.originalUrl)
         val status =
