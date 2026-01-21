@@ -5,7 +5,5 @@ import org.tohid.tinyurlservice.controller.dtos.Granularity
 import java.util.Locale
 
 class StringToGranularityConverter : Converter<String, Granularity> {
-    override fun convert(source: String): Granularity {
-        return Granularity.valueOf(source.uppercase(Locale.getDefault()))
-    }
+    override fun convert(source: String): Granularity = Granularity.valueOf(source.uppercase(Locale.getDefault()))
 }

@@ -1,25 +1,6 @@
 package org.tohid.tinyurlservice.controller.dtos
 
-import java.io.Serializable
 import java.time.Instant
-import java.time.Instant.now
-import java.time.temporal.ChronoUnit
-
-data class ShortenResponseDTO(
-    val shortenedUrl: String,
-    val expiryDate: Instant? = null,
-)
-
-data class ResolveResponseDTO(
-    val originalUrl: String,
-    val expiryDate: Instant? = null,
-    val totalClickCount: Long = 0,
-) : Serializable
-
-data class ErrorResponseDTO(
-    val error: String,
-    val time: Instant = now().truncatedTo(ChronoUnit.SECONDS),
-) : Serializable
 
 enum class Granularity {
     DAY,

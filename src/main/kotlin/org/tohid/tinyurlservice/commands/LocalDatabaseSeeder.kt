@@ -10,7 +10,6 @@ import org.tohid.tinyurlservice.repository.UrlDailyClicksRepository
 import org.tohid.tinyurlservice.repository.UrlHourlyClicksRepository
 import org.tohid.tinyurlservice.repository.UrlRepository
 import org.tohid.tinyurlservice.service.ShortCodeGenerator
-import java.time.Instant
 import java.time.Instant.now
 import java.time.LocalDate
 import java.time.ZoneOffset

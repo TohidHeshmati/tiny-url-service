@@ -7,10 +7,8 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.tohid.tinyurlservice.BaseIntegrationTest
 import org.tohid.tinyurlservice.controller.dtos.UrlStatsResponseDTO
-import java.time.Instant
 
 class UrlStatsControllerIT : BaseIntegrationTest() {
-
     @Test
     fun `returns stats with default range when dates are not provided for hourly granularity`() {
         val savedUrl = urlRepository.save(makeUrl())

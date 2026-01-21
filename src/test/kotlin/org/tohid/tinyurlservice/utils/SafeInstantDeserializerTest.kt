@@ -7,6 +7,7 @@ import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 import java.time.Instant
+import org.junit.jupiter.api.assertNotNull
 
 class SafeInstantDeserializerTest {
     private val safeInstantDeserializer = SafeInstantDeserializer()
@@ -29,7 +30,7 @@ class SafeInstantDeserializerTest {
                 deserializationContext,
             )
 
-        assert(result is Instant)
+        assertNotNull(result)
     }
 
     @ParameterizedTest
