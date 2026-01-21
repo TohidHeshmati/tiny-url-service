@@ -246,17 +246,17 @@ The project includes a modern React/Next.js frontend for easy interaction with t
 
 #### 📸 Screenshots
 
-|                    **Dashboard**                     |           **Daily Stats**            |
-|:----------------------------------------------------:|:------------------------------------:|
-|   ![Main Page](assets/mainpagewithexpiarydate.png)   | ![Daily Stats](assets/dailystat.png) |
-| **Simple interface to shorten URLs with Expiration** |     **Track daily clicks trend**     |
+|                    **Dashboard**                     |              **QR Code and expiary**               |
+|:----------------------------------------------------:|:--------------------------------------------------:|
+|   ![Main Page](assets/mainpagewithexpiarydate.png)   | ![After shortening](assets/mainpagewithqrcode.png) |
+| **Simple interface to shorten URLs with Expiration** |       the qr code generation in cliend side        |
 
-|           **Hourly Details**           |             **Device Distribution**             |
-|:--------------------------------------:|:-----------------------------------------------:|
-| ![Hourly Stats](assets/hourlystat.png) | ![Monthly Device Stats](assets/monthlystat.png) |
-|    **Granular hourly traffic view**    |      **Monthly breakdown by device type**       |
+|           **Hourly Details**           |           **Daily Stats**            |
+|:--------------------------------------:|:------------------------------------:|
+| ![Hourly Stats](assets/hourlystat.png) | ![Daily Stats](assets/dailystat.png) |
+|    **Granular hourly traffic view**    |     **Track daily clicks trend**     |
 
-|       **Top Performing Links**        | |
-|:-------------------------------------:|:-:|
-| ![Top 10 Links](assets/top10page.png) | |
-|      **View most popular URLs**       | |
+|       **Top Performing Links**        | **Device Distribution**                         |
+|:-------------------------------------:|-------------------------------------------------|
+| ![Top 10 Links](assets/top10page.png) | ![Monthly Device Stats](assets/monthlystat.png) |
+|      **View most popular URLs**       | **Monthly breakdown by device type**            |
