@@ -24,7 +24,7 @@ spring:
 
 logging:
   level:
-    org.hibernate.SQL: DEBUG
+    org.hibernate.SQL: INFO
     org:
       springdoc: DEBUG
   api-docs:
