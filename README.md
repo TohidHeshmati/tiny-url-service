@@ -237,7 +237,7 @@ The project includes a modern React/Next.js frontend for easy interaction with t
    npm run dev
    ```
 4. Open [http://localhost:3000](http://localhost:3000) in your browser.
-   
+
    > **💡 Tip:** To see the analytics visualization with seeded data, enter one of these short codes in the search box:
    > - `0N6MIoU`
    > - `02V71pQ`
@@ -246,12 +246,17 @@ The project includes a modern React/Next.js frontend for easy interaction with t
 
 #### 📸 Screenshots
 
-| **Dashboard** | **Daily Stats** |
-|:---:|:---:|
-| ![Main Page](assets/mainpage.png) | ![Daily Stats](assets/dailystat.png) |
-| **Simple interface to shorten URLs** | **Track daily clicks trend** |
+|                    **Dashboard**                     |           **Daily Stats**            |
+|:----------------------------------------------------:|:------------------------------------:|
+|   ![Main Page](assets/mainpagewithexpiarydate.png)   | ![Daily Stats](assets/dailystat.png) |
+| **Simple interface to shorten URLs with Expiration** |     **Track daily clicks trend**     |
 
-| **Hourly Details** | **Device Distribution** |
-|:---:|:---:|
-| ![Hourly Stats](assets/hourlysatat.png) | ![Monthly Device Stats](assets/monthstats.png) |
-| **Granular hourly traffic view** | **Monthly breakdown by device type** |
+|           **Hourly Details**           |             **Device Distribution**             |
+|:--------------------------------------:|:-----------------------------------------------:|
+| ![Hourly Stats](assets/hourlystat.png) | ![Monthly Device Stats](assets/monthlystat.png) |
+|    **Granular hourly traffic view**    |      **Monthly breakdown by device type**       |
+
+|       **Top Performing Links**        | |
+|:-------------------------------------:|:-:|
+| ![Top 10 Links](assets/top10page.png) | |
+|      **View most popular URLs**       | |

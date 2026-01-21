@@ -7,6 +7,7 @@ import { QRCodeCanvas } from "qrcode.react";
 export default function Home() {
   const [activeTab, setActiveTab] = useState<"create" | "stats" | "top10">("create");
   const [url, setUrl] = useState("");
+  const [expiryDate, setExpiryDate] = useState("");
   const [shortenedData, setShortenedData] = useState<{ shortened_url: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -18,12 +19,18 @@ export default function Home() {
     setShortenedData(null);
 
     try {
+      const payload: any = {
+        original_url: url,
+      };
+
+      if (expiryDate) {
+        payload.expiry_date = new Date(expiryDate).toISOString();
+      }
+
       const response = await fetch("http://localhost:8080/api/v1/urls", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          original_url: url,
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) throw new Error("Failed to shorten URL");
@@ -74,14 +81,35 @@ export default function Home() {
           <h1 className="text-2xl font-bold text-center mb-6 text-blue-600">TinyURL Creator</h1>
 
           <form onSubmit={handleShorten} className="space-y-4">
-            <input
-              type="url"
-              placeholder="Paste your long URL here..."
-              required
-              className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none text-blue-800"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-            />
+            <div>
+              <label htmlFor="url-input" className="block text-sm font-medium text-gray-700 mb-1">
+                Long URL
+              </label>
+              <input
+                id="url-input"
+                type="url"
+                placeholder="Paste your long URL here..."
+                required
+                className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none text-blue-800"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="expiry-input" className="block text-sm font-medium text-gray-700 mb-1">
+                Expiration (Optional)
+              </label>
+              <input
+                id="expiry-input"
+                type="datetime-local"
+                className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none text-blue-800"
+                value={expiryDate}
+                min={new Date().toISOString().slice(0, 16)}
+                onChange={(e) => setExpiryDate(e.target.value)}
+              />
+            </div>
+
             <button
               type="submit"
               disabled={loading}
