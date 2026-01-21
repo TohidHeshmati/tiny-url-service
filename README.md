@@ -140,7 +140,30 @@ graph TD
 ![Ktlint](https://img.shields.io/badge/Ktlint-Code%20Formatter-blueviolet?logo=kotlin)
 ![Flyway](https://img.shields.io/badge/Flyway-DB%20Migration-orange?logo=flyway)
 
-# Under construction --> Analytics
+### 📊 Analytics
+The service tracks detailed click statistics for every shortened URL.
+
+#### Features
+- **Real-time Tracking:** Clicks are aggregated in real-time.
+- **Granularity:** Supports both **Hourly** and **Daily** breakdowns.
+- **Flexible Reporting:** Query stats for any custom date range.
+
+#### API Endpoint
+`GET /api/v1/urls/{shortCode}/stats`
+
+| Parameter     | Description                                                                 | Default Value             |
+|:--------------|:----------------------------------------------------------------------------|:--------------------------|
+| `granularity` | Time bucket size: `HOUR` or `DAY`                                           | `DAY`                     |
+| `from`        | Start date (ISO-8601). If omitted, defaults based on granularity.           | `NOW - 30 days` (Daily)<br>`NOW - 24 hours` (Hourly) |
+| `to`          | End date (ISO-8601).                                                        | `NOW`                     |
+
+**Example Request:**
+`GET /api/v1/urls/abc1234/stats?granularity=hour&from=2023-10-27T00:00:00Z`
+
+#### 🛠 Development Data Seeding
+When running in the `local` profile, the application automatically seeds the database with:
+1.  **Sample URLs:** A set of predefined and random URLs.
+2.  **Randomized Traffic:** Realistic click traffic distributed over the past 30 days for testing analytics visualization.
 
 ### Pre-requisites
 - Java 21

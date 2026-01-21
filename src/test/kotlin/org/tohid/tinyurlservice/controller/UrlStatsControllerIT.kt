@@ -17,7 +17,7 @@ class UrlStatsControllerIT : BaseIntegrationTest() {
 
         val response: ResponseEntity<UrlStatsResponseDTO> =
             restTemplate.exchange(
-                "$baseUrl/api/v1/urls/${savedUrl.shortUrl}/stats?granularity=HOUR",
+                "$baseUrl/api/v1/urls/${savedUrl.shortUrl}/stats?granularity=hour",
                 HttpMethod.GET,
                 null,
                 UrlStatsResponseDTO::class.java,
