@@ -15,7 +15,9 @@ import org.tohid.tinyurlservice.controller.dtos.UrlStatsResponseDTO
 import org.tohid.tinyurlservice.service.UrlService
 import java.time.Instant
 import java.time.temporal.ChronoUnit
+import org.springframework.web.bind.annotation.CrossOrigin
 
+@CrossOrigin(origins = ["http://localhost:3000"])
 @RestController
 @RequestMapping("/api/v1")
 class UrlStatsController(

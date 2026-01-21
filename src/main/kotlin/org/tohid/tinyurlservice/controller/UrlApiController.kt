@@ -21,7 +21,9 @@ import org.tohid.tinyurlservice.domain.toResolveResponseDTO
 import org.tohid.tinyurlservice.service.UrlResolverService
 import org.tohid.tinyurlservice.service.UrlService
 import java.net.URI
+import org.springframework.web.bind.annotation.CrossOrigin
 
+@CrossOrigin(origins = ["http://localhost:3000"])
 @RestController
 @RequestMapping("/api/v1/urls")
 class UrlApiController(
