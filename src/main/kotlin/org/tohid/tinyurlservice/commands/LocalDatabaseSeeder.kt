@@ -11,13 +11,13 @@ import org.tohid.tinyurlservice.repository.UrlDailyClicksRepository
 import org.tohid.tinyurlservice.repository.UrlHourlyClicksRepository
 import org.tohid.tinyurlservice.repository.UrlRepository
 import org.tohid.tinyurlservice.service.ShortCodeGenerator
+import java.time.Instant
 import java.time.Instant.now
 import java.time.LocalDate
 import java.time.ZoneOffset
 import java.time.temporal.ChronoUnit
 import kotlin.random.Random
 import kotlin.time.ExperimentalTime
-import java.time.Instant
 
 /* * LocalDatabaseSeeder is a CommandLineRunner that seeds the local database with initial URLs.
  * It runs only when the application is started with the "local" profile.
@@ -112,12 +112,14 @@ class LocalDatabaseSeeder(
                 // 1. Convert Map to Hourly Entities
                 hourlyMap.forEach { (key, count) ->
                     val (hour, device) = key
-                    hourlyClicks.add(UrlHourlyClicks(
-                        urlId = url.id,
-                        clickHour = hour,
-                        count = count,
-                        deviceType = device
-                    ))
+                    hourlyClicks.add(
+                        UrlHourlyClicks(
+                            urlId = url.id,
+                            clickHour = hour,
+                            count = count,
+                            deviceType = device,
+                        ),
+                    )
                 }
 
                 // 2. Aggregate by Device for Daily Totals
@@ -125,12 +127,14 @@ class LocalDatabaseSeeder(
                     .groupBy { it.key.second } // Group by DeviceType
                     .forEach { (device, entries) ->
                         val totalForDevice = entries.sumOf { it.value }
-                        dailyClicks.add(UrlDailyClicks(
-                            urlId = url.id,
-                            clickDate = date,
-                            count = totalForDevice,
-                            deviceType = device
-                        ))
+                        dailyClicks.add(
+                            UrlDailyClicks(
+                                urlId = url.id,
+                                clickDate = date,
+                                count = totalForDevice,
+                                deviceType = device,
+                            ),
+                        )
                     }
             }
 

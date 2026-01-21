@@ -1,11 +1,12 @@
 "use client";
 import { useState } from "react";
 import StatsView from "./components/StatsView";
+import TopLinksView from "./components/TopLinksView";
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<"create" | "stats">("create");
+  const [activeTab, setActiveTab] = useState<"create" | "stats" | "top10">("create");
   const [url, setUrl] = useState("");
-  const [shortenedData, setShortenedData] = useState<any>(null);
+  const [shortenedData, setShortenedData] = useState<{ shortened_url: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -28,8 +29,8 @@ export default function Home() {
 
       const data = await response.json();
       setShortenedData(data);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "An unknown error occurred");
     } finally {
       setLoading(false);
     }
@@ -55,6 +56,15 @@ export default function Home() {
             }`}
         >
           View Statistics
+        </button>
+        <button
+          onClick={() => setActiveTab("top10")}
+          className={`px-6 py-2 rounded-md font-medium transition-colors ${activeTab === "top10"
+            ? "bg-blue-600 text-white shadow-sm"
+            : "text-gray-600 hover:bg-gray-100"
+            }`}
+        >
+          Top 10 Links
         </button>
       </div>
 
@@ -103,8 +113,10 @@ export default function Home() {
             </div>
           )}
         </div>
-      ) : (
+      ) : activeTab === "stats" ? (
         <StatsView />
+      ) : (
+        <TopLinksView />
       )}
     </main>
   );

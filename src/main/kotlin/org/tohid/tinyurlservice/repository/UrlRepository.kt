@@ -24,4 +24,6 @@ interface UrlRepository : CrudRepository<Url, Long> {
     @Modifying
     @Query("UPDATE Url u SET u.totalClickCount = u.totalClickCount + 1 WHERE u.id = :id")
     fun incrementTotalClickCount(id: Long)
+
+    fun findTop10ByOrderByTotalClickCountDesc(): List<Url>
 }

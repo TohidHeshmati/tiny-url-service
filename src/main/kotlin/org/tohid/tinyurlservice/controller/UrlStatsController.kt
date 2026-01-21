@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.tohid.tinyurlservice.controller.dtos.Granularity
 import org.tohid.tinyurlservice.controller.dtos.UrlStatsResponseDTO
+import org.tohid.tinyurlservice.controller.dtos.UrlSummaryDTO
 import org.tohid.tinyurlservice.service.UrlService
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -48,5 +49,17 @@ class UrlStatsController(
         val toDate = to ?: Instant.now()
         val stats = urlService.getStatsForUrl(shortCode, granularity, fromDate, toDate)
         return ResponseEntity.ok(stats)
+    }
+
+    @GetMapping("/urls/stats/top")
+    @Operation(summary = "Get top 10 most clicked URLs")
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "List of top URLs retrieved successfully"),
+        ],
+    )
+    fun getTopUrls(): ResponseEntity<List<UrlSummaryDTO>> {
+        val topUrls = urlService.getTopTenMostClickedUrls()
+        return ResponseEntity.ok(topUrls)
     }
 }

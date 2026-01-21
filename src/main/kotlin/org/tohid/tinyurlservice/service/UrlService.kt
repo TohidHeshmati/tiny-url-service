@@ -10,6 +10,7 @@ import org.tohid.tinyurlservice.controller.dtos.ShortenRequestDTO
 import org.tohid.tinyurlservice.controller.dtos.ShortenResponseDTO
 import org.tohid.tinyurlservice.controller.dtos.TimeSeriesData
 import org.tohid.tinyurlservice.controller.dtos.UrlStatsResponseDTO
+import org.tohid.tinyurlservice.controller.dtos.UrlSummaryDTO
 import org.tohid.tinyurlservice.domain.Url
 import org.tohid.tinyurlservice.domain.toShortenResponseDTO
 import org.tohid.tinyurlservice.exception.NotFoundException
@@ -117,4 +118,13 @@ class UrlService(
                 ),
         )
     }
+
+    fun getTopTenMostClickedUrls(): List<UrlSummaryDTO> =
+        urlRepository.findTop10ByOrderByTotalClickCountDesc().map {
+            UrlSummaryDTO(
+                shortCode = it.shortUrl,
+                originalUrl = it.originalUrl,
+                totalClicks = it.totalClickCount,
+            )
+        }
 }
