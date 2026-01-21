@@ -14,7 +14,7 @@ import org.tohid.tinyurlservice.controller.dtos.ErrorResponseDTO
 import org.tohid.tinyurlservice.service.UrlService
 
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping("/")
 class RedirectController(
     private val urlService: UrlService,
 ) {

@@ -5,14 +5,13 @@ import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.CrudRepository
 import org.springframework.stereotype.Repository
 import org.springframework.transaction.annotation.Transactional
-import org.tohid.tinyurlservice.domain.Url
 import org.tohid.tinyurlservice.domain.UrlDailyClicks
 import java.time.LocalDate
 
 @Repository
 interface UrlDailyClicksRepository : CrudRepository<UrlDailyClicks, Long> {
-    fun findAllByUrlAndClickDateBetween(
-        url: Url,
+    fun findAllByUrlIdAndClickDateBetween(
+        urlId: Long,
         start: LocalDate,
         end: LocalDate,
     ): List<UrlDailyClicks>

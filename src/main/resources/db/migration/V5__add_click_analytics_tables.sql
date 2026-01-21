@@ -5,12 +5,12 @@ ALTER TABLE url
 -- Create daily clicks table
 CREATE TABLE url_daily_clicks
 (
-    id         BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    url_id     BIGINT    NOT NULL,
-    click_date DATE      NOT NULL,
-    count      BIGINT    NOT NULL DEFAULT 0,
-    created_at DATETIME  NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME  NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    id         BIGINT   NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    url_id     BIGINT   NOT NULL,
+    click_date DATE     NOT NULL,
+    count      BIGINT   NOT NULL DEFAULT 0,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_url_daily FOREIGN KEY (url_id) REFERENCES url (id) ON DELETE CASCADE,
     UNIQUE KEY (url_id, click_date)
 );
@@ -18,12 +18,12 @@ CREATE TABLE url_daily_clicks
 -- Create hourly clicks table
 CREATE TABLE url_hourly_clicks
 (
-    id          BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    url_id      BIGINT    NOT NULL,
-    click_hour  DATETIME  NOT NULL,
-    count       BIGINT    NOT NULL DEFAULT 0,
-    created_at  DATETIME  NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at  DATETIME  NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    id         BIGINT    NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    url_id     BIGINT    NOT NULL,
+    click_hour TIMESTAMP NOT NULL,
+    count      BIGINT    NOT NULL DEFAULT 0,
+    created_at DATETIME  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME  NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_url_hourly FOREIGN KEY (url_id) REFERENCES url (id) ON DELETE CASCADE,
     UNIQUE KEY (url_id, click_hour)
 );

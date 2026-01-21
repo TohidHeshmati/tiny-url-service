@@ -74,16 +74,16 @@ class UrlService(
             when (granularity) {
                 Granularity.DAY ->
                     urlDailyClicksRepository
-                        .findAllByUrlAndClickDateBetween(
-                            url,
+                        .findAllByUrlIdAndClickDateBetween(
+                            url.id,
                             fromDate.truncatedTo(ChronoUnit.DAYS).atZone(java.time.ZoneOffset.UTC).toLocalDate(),
                             toDate.truncatedTo(ChronoUnit.DAYS).atZone(java.time.ZoneOffset.UTC).toLocalDate(),
                         ).map { DataPoint(it.clickDate.atStartOfDay().toInstant(java.time.ZoneOffset.UTC), it.count) }
 
                 Granularity.HOUR ->
                     urlHourlyClicksRepository
-                        .findAllByUrlAndClickHourBetween(url, fromDate, toDate)
-                        .map { DataPoint(it.clickHour.toInstant(java.time.ZoneOffset.UTC), it.count) }
+                        .findAllByUrlIdAndClickHourBetween(url.id, fromDate, toDate)
+                        .map { DataPoint(it.clickHour, it.count) }
             }
 
         return UrlStatsResponseDTO(
