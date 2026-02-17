@@ -1,7 +1,13 @@
 .PHONY: run stop clean test build check format help logs
 
+
 # Default target
 run: run-backend
+
+run-docker:
+	docker compose down -v
+	docker compose up -d --build
+
 
 run-backend:
 	@echo "🚀 Starting infrastructure..."

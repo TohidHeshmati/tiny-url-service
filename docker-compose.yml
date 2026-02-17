@@ -1,28 +1,56 @@
 version: '3.8'
 
 services:
-  mysql-test:
-    container_name: tiny_url_service_mysql_test
-    image: mysql:8.0
+  backend:
+    build: .
+    container_name: tiny_url_backend
     ports:
-      - "63490:3306"
+      - "8080:8080"
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: tiny_url_service_test
+      - SPRING_PROFILES_ACTIVE=local
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/tiny_url_service_local
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=root
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
 
-  mysql-local:
-    container_name: tiny_url_service_mysql_local
-    image: mysql:8.0
+  frontend:
+    build: ./tiny-ui
+    container_name: tiny_url_frontend
     ports:
-      - "3106:3306"
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8080
+    depends_on:
+      - backend
+
+  mysql:
+    image: mysql:8.0.33
+    container_name: tiny_url_mysql
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: tiny_url_service_local
+    ports:
+      - "3106:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
 
   redis:
-    container_name: tiny_url_service_redis
-    image: redis:7.2
+    image: redis:7.2-alpine
+    container_name: tiny_url_redis
     ports:
       - "6379:6379"
-    tmpfs:
-      - /data
+
+volumes:
+  mysql_data:

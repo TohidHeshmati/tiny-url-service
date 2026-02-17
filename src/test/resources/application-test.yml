@@ -1,7 +1,7 @@
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:63490/tiny_url_service_test
+    url: jdbc:mysql://localhost:3106/tiny_url_service_test
     username: root
     password: root
   jackson:

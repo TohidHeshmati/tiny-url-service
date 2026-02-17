@@ -4,6 +4,23 @@
 
 ## 🚀 Quick start
 
+### Run with Docker (Recommended)
+
+You can run the entire stack (Backend, Frontend, Database, Redis) using Docker Compose without installing Java or Node.js locally.
+
+```bash
+make run-docker
+```
+Or manually:
+```bash
+docker compose up -d --build
+```
+
+- **Frontend:** [http://localhost:3000](http://localhost:3000)
+- **Backend Swagger UI:** [http://localhost:8080/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html)
+
+### Local Development (Requires Java & Node.js)
+
 Simply use `make run` and check if it is up and running from swagger ui.
 
 ### Swagger UI
@@ -84,6 +101,8 @@ local generation performance** while maintaining global uniqueness.
 
 | Command                       | Action                                                                       |
 |-------------------------------|------------------------------------------------------------------------------|
+| `make run-docker`           | Starts the entire stack (Backend, Frontend, DB, Redis) in containers using `local` profile.|
+| `docker compose up --build`   | Starts the entire stack in containers (manual command).|
 | `make run-backend`            | Starts the backend application and its dependencies (`mysql` and `redis`).   |
 | `make run-frontend`           | Starts the Next.js frontend application.                                     |
 | `make run-all`                | Starts both backend and frontend concurrently.                               |
