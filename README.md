@@ -110,16 +110,22 @@ them: an in-memory cache (e.g. Caffeine) and a plain `@Scheduled` job would be e
 
 Found while reviewing my own code. Listed here so the trade-offs are explicit.
 
-| Limitation | Effect | Planned fix |
-|:--|:--|:--|
-| The expiry check runs inside the `@Cacheable` method | An expired link can keep redirecting from Redis until the cache entry expires (up to 100 min); the cleanup job does not evict the cache | Check expiry after the cache lookup and limit the TTL to the link's expiry |
-| The original-URL cache used for de-duplication is not evicted on delete | Shortening a URL again after its link expired can return the old, deleted code | Evict on delete and on cleanup |
-| `301` for links without expiry | Browsers cache `301`, so repeat clicks are not counted and the target cannot change later | Use `302` where analytics matter |
-| Each click updates three rows (total, hourly, daily) | Popular links become hot rows under load; the async executor queue is unbounded | Count in Redis and write to MySQL in batches; bound the executor |
-| Hibernate `ddl-auto: update` alongside Flyway | Two tools can change the schema | Flyway owns the schema; Hibernate set to `validate` |
-| De-duplication is check-then-insert | Two concurrent requests for the same URL can hit the unique constraint | Handle the constraint violation and return the existing code |
-| Integration tests need MySQL and Redis already running | Tests depend on `docker compose` being up | Testcontainers |
-| No load tests | No performance numbers are claimed | Add a k6 or Gatling scenario before stating any |
+| Limitation | Kind | Effect | Next step |
+|:--|:--|:--|:--|
+| `301` for links without expiry | Product decision | Browsers cache `301`, so repeat clicks are not counted and the target cannot change later. Expiring links already use `302` | Use `302` everywhere if analytics matter more than permanent links |
+| Each click updates three rows (total, hourly, daily) | Scale trade-off | Popular links become hot rows under load | Count in Redis and write to MySQL in batches |
+| The async executor queue is unbounded | Config | Click events pile up in memory under load | Bounded `ThreadPoolTaskExecutor` with a rejection policy |
+| De-duplication is check-then-insert | Bug | Two concurrent requests for the same URL can hit the unique constraint | Handle the constraint violation and return the existing code |
+| Integration tests need MySQL and Redis already running | Tooling | Tests depend on `docker compose` being up | Testcontainers |
+| No load tests | Tooling | No performance numbers are claimed | Add a k6 or Gatling scenario before stating any |
+
+**Fixed:**
+
+- Expiry is now checked on every resolve, also when the link comes from the Redis cache. Before, the check ran inside
+  the `@Cacheable` method, so an expired link could keep redirecting for up to 100 minutes. The cleanup job also clears
+  both URL caches after deleting expired links, so de-duplication no longer returns deleted codes.
+- Hibernate `ddl-auto` is now `validate`: Flyway alone changes the schema, and the app refuses to start if the entities
+  and the migrations disagree.
 
 Roadmap ideas: custom aliases (e.g. `/my-promo-link`), rate limiting per IP.
 
