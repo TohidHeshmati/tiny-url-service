@@ -1,6 +1,5 @@
 package org.tohid.tinyurlservice.service
 
-import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
 import org.tohid.tinyurlservice.domain.Url
 import org.tohid.tinyurlservice.domain.isExpired
@@ -10,21 +9,22 @@ import org.tohid.tinyurlservice.repository.UrlRepository
 @Service
 class UrlResolverService(
     private val urlRepository: UrlRepository,
+    private val urlLookupCache: UrlLookupCache,
 ) {
-    @Cacheable(cacheNames = ["short-urls"], key = "#shortUrl")
     fun resolve(shortUrl: String): Url {
         val url =
-            urlRepository.findByShortUrl(shortUrl)
+            urlLookupCache.findByShortUrl(shortUrl)
                 ?: throw NotFoundException("Short URL not found: $shortUrl")
 
+        // Checked outside the cache so an expired link stops resolving even while it is still cached.
         if (url.isExpired()) {
             urlRepository.delete(url)
+            urlLookupCache.evict(url)
             throw NotFoundException("Short URL has expired: $shortUrl")
         }
 
         return url
     }
 
-    @Cacheable(cacheNames = ["original-urls"], key = "#originalUrl", unless = "#result == null")
-    fun getByOriginalUrl(originalUrl: String): Url? = urlRepository.findByOriginalUrl(originalUrl)
+    fun getByOriginalUrl(originalUrl: String): Url? = urlLookupCache.findByOriginalUrl(originalUrl)
 }

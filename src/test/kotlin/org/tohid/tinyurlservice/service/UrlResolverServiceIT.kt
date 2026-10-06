@@ -1,16 +1,23 @@
 package org.tohid.tinyurlservice.service
 
+import org.awaitility.Awaitility
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertNotNull
 import org.junit.jupiter.api.assertNull
 import org.junit.jupiter.api.assertThrows
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.cache.CacheManager
 import org.tohid.tinyurlservice.BaseIntegrationTest
 import org.tohid.tinyurlservice.domain.Url
 import org.tohid.tinyurlservice.exception.NotFoundException
+import java.time.Duration
 import java.time.Instant
 import kotlin.test.assertEquals
 
 class UrlResolverServiceIT : BaseIntegrationTest() {
+    @Autowired
+    lateinit var cacheManager: CacheManager
+
     @Test
     fun `resolves Url from cache if it exists and cache is hit`() {
         val originalUrl = "https://example.com"
@@ -53,6 +60,29 @@ class UrlResolverServiceIT : BaseIntegrationTest() {
         assert(urlRepository.count() == 0L)
         val cached = redisTemplate.opsForValue().get("short:$shortUrl")
         assert(cached == null)
+    }
+
+    @Test
+    fun `cached Url stops resolving once its expiry date passes`() {
+        val shortUrl = shortCodeGenerator.generate()
+        urlRepository.save(
+            Url(
+                originalUrl = "https://expires-soon.com",
+                shortUrl = shortUrl,
+                expiryDate = Instant.now().plusSeconds(1),
+            ),
+        )
+
+        // First call puts the still-valid Url into the cache
+        assertEquals("https://expires-soon.com", urlResolverService.resolve(shortUrl).originalUrl)
+
+        Awaitility.await().atMost(Duration.ofSeconds(5)).untilAsserted {
+            val exception = assertThrows<NotFoundException> { urlResolverService.resolve(shortUrl) }
+            assertEquals("Short URL has expired: $shortUrl", exception.message)
+        }
+
+        assertEquals(0L, urlRepository.count())
+        assertNull(cacheManager.getCache(UrlLookupCache.SHORT_URLS)?.get(shortUrl))
     }
 
     @Test
