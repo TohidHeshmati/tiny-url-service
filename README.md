@@ -1,149 +1,135 @@
 # TinyURL Service 🔗
 
-> A minimal semi production-ready URL shortener designed for low-latency redirections and high scalability. 🚀
+> A URL shortener built as a learning project, to practise the decisions a backend has to make once it runs on more
+> than one instance: ID generation, caching, scheduled jobs, schema migrations and testing.
 
-## 🚀 Quick start
+It is not a production service and has not been load-tested. The sections below explain what I chose, what I
+rejected, and what I know is still missing.
 
-### Run with Docker (Recommended)
+## Quick start
 
-You can run the entire stack (Backend, Frontend, Database, Redis) using Docker Compose without installing Java or Node.js locally.
+### Run with Docker (recommended)
+
+Runs the whole stack (backend, frontend, MySQL, Redis) without installing Java or Node.js locally.
 
 ```bash
 make run-docker
 ```
+
 Or manually:
+
 ```bash
 docker compose up -d --build
 ```
 
 - **Frontend:** [http://localhost:3000](http://localhost:3000)
-- **Backend Swagger UI:** [http://localhost:8080/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html)
+- **Swagger UI:** [http://localhost:8080/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html)
 
-### Local Development (Requires Java & Node.js)
+### Local development (requires Java 21 and Node.js)
 
-Simply use `make run` and check if it is up and running from swagger ui.
+`make run` starts MySQL and Redis in Docker and runs the backend with the `local` profile. Check that it is up in the
+Swagger UI.
 
-### Swagger UI
+## The core question
 
-The Swagger UI is available at `http://localhost:8080/swagger-ui/index.html` when the application is running.
+Every new link needs an ID that is:
 
-## 🏗 Architecture Decisions
+1. **Unique** across all running instances, without collisions to retry
+2. **Short**: 7 URL-safe characters
+3. **Not sequential**, so nobody can walk through other people's links by counting 1, 2, 3
+4. **Cheap to create**, without a shared resource being hit on every request
 
-#### 1. Short Code Strategy (ID Shuffling)
+Most of the design follows from this question.
 
-Instead of random strings (which cause DB collisions) or sequential IDs (which are predictable and pose a security risk
-of enumeration), this service uses a robust approach:
+## Design decisions
 
-1. **DB Sequence:** A `global_id_sequence` table provides unique, sequential ID blocks for each instance of the app.
-2. **LCG Shuffling:** A Linear Congruential Generator shuffles the ID to make it non-obvious and non-predictable. This
-   prevents enumeration of short URLs, enhancing privacy and security.
-3. **Base62 Encoding:** The shuffled ID is then efficiently encoded into a compact, URL-safe string for the final short
-   URL (e.g., `https://tiny.url/aB3x9L`).
+### 1. Short codes: reserved ID ranges + shuffle + Base62
 
-#### 2. High-Performance Caching (Redis)
+1. **Reserve a range.** Each instance reserves a block of 1,000 IDs from a single-row `global_id_sequence` table with
+   one atomic update (`UPDATE ... SET next_block_start = LAST_INSERT_ID(next_block_start + 1000)`), then hands IDs out
+   from memory.
+2. **Shuffle.** Each ID is mapped to a different number with
+   `(id × 2,147,483,647 + 123,456,789) mod 10¹²`. Because 2³¹−1 is prime and shares no factor with 10¹², this map is a
+   permutation: unique inputs stay unique, and neighbouring IDs land far apart.
+3. **Encode.** The result is Base62-encoded with a scrambled alphabet. Since 62⁷ ≈ 3.5 × 10¹², every code fits in
+   7 characters (e.g. `https://tiny.url/aB3x9Lq`).
 
-To ensure rapid redirection and minimize database load, a read-through cache is implemented:
+**Options I considered:**
 
-1. **Read-Through Cache:** Redis is utilized to store the `Short Code -> Original URL` mapping.
-2. **Impact:** This dramatically reduces database hits for popular links, enabling sub-100ms redirection times and
-   significantly improving overall service responsiveness and scalability.
+| Option                         | Unique       | Short          | Not sequential   | Cost per new link                  |
+|:-------------------------------|:-------------|:---------------|:-----------------|:-----------------------------------|
+| DB `AUTO_INCREMENT` (V1)       | yes          | yes            | no               | DB round trip on one counter       |
+| Redis `INCR` (V2)              | yes          | yes            | no               | Redis round trip on one hot key    |
+| Hash of the URL                | collisions   | only truncated | yes              | collision check and retry          |
+| Random code + retry            | collisions   | yes            | yes              | retries grow as the space fills    |
+| Snowflake-style 64-bit IDs     | yes          | no (11+ chars) | partly           | local, but needs clock and node id |
+| **Reserved ranges + shuffle**  | **yes**      | **yes (7)**    | **yes**          | **one DB call per 1,000 links**    |
 
-#### 3. Optimized Database Access
+**What this costs:**
 
-Efficient database interactions are critical for performance:
+- **Gaps.** A restart discards the rest of the instance's block (up to 999 IDs). Acceptable with 10¹² IDs available.
+- **Obfuscation, not security.** The shuffle is a linear formula; a few known codes are enough to reverse it. It hides
+  volume and order, but it is not access control. Links that must stay secret would need random 128-bit tokens or
+  signed URLs.
+- **The database is still required.** Instances keep issuing IDs if MySQL is briefly unavailable, but saving the link
+  still needs MySQL. The gain is less contention on a shared counter, not independence from the database.
+- **MySQL-specific.** The `LAST_INSERT_ID` trick is MySQL syntax. On PostgreSQL a sequence with `INCREMENT BY 1000`
+  would do the same job.
 
-1. **Purpose-built Sequences:** Dedicated database sequences (e.g., `global_id_sequence`) ensure high-concurrency,
-   collision-free ID generation.
-2. **Strategic Indexing:** Key columns, especially the `short_code` in the URL table, are indexed (
-   `V2__add_index_on_short_url.sql`). This is crucial for sub-millisecond lookup times during redirection and other API
-   calls, preventing full table scans.
+### 2. Redirects from a Redis cache
 
-#### 4. Scalable & Robust Cleanup
+Redirects are read far more often than links are created, so the `short code → URL` mapping is cached in Redis
+(read-through via Spring's `@Cacheable`). Most redirects never touch MySQL. Redirect latency has not been measured.
 
-To prevent indefinite database growth and ensure resource efficiency, automated cleanup is integrated:
+### 3. Cleanup runs on one instance only
 
-1. **Scheduled Tasks:** A `UrlCleanupJob` runs periodically to prune expired or stale URL records from the database.
-2. **Distributed Locking (ShedLock):** `ShedLock` is used to ensure that this job runs reliably in a clustered
-   environment, preventing multiple instances from executing the cleanup concurrently and ensuring data integrity.
+A nightly `UrlCleanupJob` deletes expired links. ShedLock takes a lock in the database, using the database clock rather
+than each server's clock, so only one instance runs the job.
 
-#### 5. Comprehensive Quality Assurance
+### 4. Schema migrations with Flyway
 
-A strong emphasis is placed on code quality, reliability, and correctness:
+The schema is versioned in `src/main/resources/db/migration` (V1 to V5).
 
-1. **Extensive Testing Suite:** The project includes a comprehensive suite of both unit tests (`...Test.kt`) and
-   integration tests (`...IT.kt`).
-2. **Purpose:** This robust testing infrastructure ensures the correctness of business logic, validates API contracts,
-   and provides confidence for future refactoring and feature development.
+### Why Redis and ShedLock at all?
 
-### ✨ Design Evolution & Trade-offs
+They only pay off with several instances, which is the case I wanted to practise. A single instance would not need
+them: an in-memory cache (e.g. Caffeine) and a plain `@Scheduled` job would be enough.
 
-Moving from a centralized bottleneck to a distributed range-based strategy, I solved for both **Network Latency** and *
-*Availability**.
+## How the design evolved
 
-| **Feature**         | V1 (Direct DB)                | V2 (Redis Centric)               | **Current (Range-Based)**       | **Impact**                                           |
-|:--------------------|:------------------------------|:---------------------------------|:--------------------------------|:-----------------------------------------------------|
-| **ID Generation**   | DB `AUTO_INCREMENT`           | Redis `INCR` (Centralized)       | **In-memory Blocks**            | 99.9% reduction in network round-trips.              |
-| **Security**        | Sequential (1, 2, 3...)       | Sequential                       | **LCG Shuffled**                | Prevents business intelligence leaks                 |
-| **Fault Tolerance** | DB as Single point of failure | Redis as Single point of failure | **Local-First**                 | Service issues IDs even if DB/Redis are flickering.  |
-| **Scalability**     | High DB contention            | Single Redis Key bottleneck      | **Horizontally Scalable**       | Each instance acts independently.                    |
-| **Reliability**     | No Error Schema               | No Error Schema                  | **Standardized Error Handling** | Predictable contract for Frontend/Client consumers.  |
-| **statistics**      | No Statistics                 | No Statistics                    | **Stat information**            | get information on when a shortened url was clicked. |
+| | V1 | V2 | V3 (current) |
+|:--|:--|:--|:--|
+| **ID source** | DB `AUTO_INCREMENT` | Redis `INCR` | Block of 1,000 reserved from the DB, then counted in memory |
+| **Shared calls for IDs** | One per new link | One per new link | One per 1,000 new links |
+| **Codes** | Sequential | Sequential | Shuffled |
+| **If the counter store is down** | No new links | No new links | IDs continue until the block runs out; saving still needs MySQL |
+| **Errors** | Ad hoc | Ad hoc | One JSON error format for all failures |
+| **Statistics** | None | None | Hourly and daily clicks per device type |
 
-#### Why I moved away from Centralized Counters (Redis/DB):
+## Known limitations and next steps
 
-In previous versions, every `shorten` request required a network hop to fetch the next ID. At scale, this introduces *
-*latency spikes** and a **single point of failure**. By pre-allocating ID blocks to each instance, I achieved **O(1)
-local generation performance** while maintaining global uniqueness.
+Found while reviewing my own code. Listed here so the trade-offs are explicit.
 
----
+| Limitation | Effect | Planned fix |
+|:--|:--|:--|
+| The expiry check runs inside the `@Cacheable` method | An expired link can keep redirecting from Redis until the cache entry expires (up to 100 min); the cleanup job does not evict the cache | Check expiry after the cache lookup and limit the TTL to the link's expiry |
+| The original-URL cache used for de-duplication is not evicted on delete | Shortening a URL again after its link expired can return the old, deleted code | Evict on delete and on cleanup |
+| `301` for links without expiry | Browsers cache `301`, so repeat clicks are not counted and the target cannot change later | Use `302` where analytics matter |
+| Each click updates three rows (total, hourly, daily) | Popular links become hot rows under load; the async executor queue is unbounded | Count in Redis and write to MySQL in batches; bound the executor |
+| Hibernate `ddl-auto: update` alongside Flyway | Two tools can change the schema | Flyway owns the schema; Hibernate set to `validate` |
+| De-duplication is check-then-insert | Two concurrent requests for the same URL can hit the unique constraint | Handle the constraint violation and return the existing code |
+| Integration tests need MySQL and Redis already running | Tests depend on `docker compose` being up | Testcontainers |
+| No load tests | No performance numbers are claimed | Add a k6 or Gatling scenario before stating any |
 
-## 🧪 Development & Testing
+Roadmap ideas: custom aliases (e.g. `/my-promo-link`), rate limiting per IP.
 
-| Command                       | Action                                                                       |
-|-------------------------------|------------------------------------------------------------------------------|
-| `make run-docker`           | Starts the entire stack (Backend, Frontend, DB, Redis) in containers using `local` profile.|
-| `docker compose up --build`   | Starts the entire stack in containers (manual command).|
-| `make run-backend`            | Starts the backend application and its dependencies (`mysql` and `redis`).   |
-| `make run-frontend`           | Starts the Next.js frontend application.                                     |
-| `make run-all`                | Starts both backend and frontend concurrently.                               |
-| `make stop`                   | Stops the application and its dependencies.                                  |
-| `make test`                   | Runs the integration tests.                                                  |
-| `make build`                  | Builds the application JAR and a Docker image.                               |
-| `make clean`                  | Cleans the build artifacts.                                                  |
-| `make format`                 | Formats the code using Ktlint.                                               |
-| `make check`                  | Checks the code style using Ktlint.                                          |
-| `make logs`                   | Tails the logs from the `mysql` and `redis` containers.                      |
-| `make health`                 | Checks the health of the application.                                        |
-| `make shorten url=<url here>` | Shortens a sample URL. If no URL is provided, it uses `https://example.com`. |
+## Flows
 
-### 📊 Analytics
-
-The service tracks detailed click statistics for every shortened URL.
-
-#### Features
-
-- **Real-time Tracking:** Clicks are aggregated in real-time.
-- **Granularity:** Supports both **Hourly** and **Daily** breakdowns.
-- **Flexible Reporting:** Query stats for any custom date range.
-
-#### API Endpoint
-
-`GET /api/v1/urls/{shortCode}/stats`
-
-| Parameter     | Description                                                       | Default Value                                        |
-|:--------------|:------------------------------------------------------------------|:-----------------------------------------------------|
-| `granularity` | Time bucket size: `HOUR` or `DAY`                                 | `DAY`                                                |
-| `from`        | Start date (ISO-8601). If omitted, defaults based on granularity. | `NOW - 30 days` (Daily)<br>`NOW - 24 hours` (Hourly) |
-| `to`          | End date (ISO-8601).                                              | `NOW`                                                |
-
-**Example Request:**
-`GET /api/v1/urls/abc1234/stats?granularity=hour&from=2023-10-27T00:00:00Z`
-
-## URL Creation Flow
+### URL creation
 
 ```mermaid
 graph TD
-    Client[Client <br/><i>Web Browser, curl</i>] -- " HTTP POST /api/v1/url " --> Controller[UrlApiController]
+    Client[Client <br/><i>Web Browser, curl</i>] -- " HTTP POST /api/v1/urls " --> Controller[UrlApiController]
     Controller -- " Calls UrlService " --> Service[UrlService]
     Service --> SCG[ShortCodeGenerator]
     Service --> Repos[UrlRepository]
@@ -152,57 +138,92 @@ graph TD
     Repos -- " Save Url entity " --> DB
 ```
 
-## Id generation flow to save db travels
+### ID generation with reserved blocks
 
-#### this way every instance gets a block of id and does not need to call DB saving a lot of calls and time for us
+Each instance reserves a block of IDs and only calls the database again when the block is used up.
 
 ```mermaid
 graph TD
-    subgraph "SequenceRepository: Block Allocation Logic"
+    subgraph "ShortCodeGenerator: block allocation"
         direction TB
-        B(ShortCodeGenerator) -- " 1. Request numerical ID " --> C{Has unused ID in memory?}
-    %% The Fast Path
-        C -- " YES (Fast Path) " --> D["2a. Increment currentId in memory"]
-        D --> E{ID Ready}
-    %% The Slow Path (Block Depleted)
-        C -- " NO (Block Depleted) " --> F["2b. Request NEW BLOCK from DB"]
-        F -- " UPDATE sequence_table SET val = val + 1000 " --> G[(Database)]
-        G -- " Return new range end " --> H["3b. Refresh in-memory range"]
+        B(ShortCodeGenerator) -- " 1. Request numerical ID " --> C{Unused ID left in block?}
+        C -- " YES " --> D["2a. Increment currentId in memory"]
+        D --> E{ID ready}
+        C -- " NO (block used up) " --> F["2b. Reserve a new block"]
+        F -- " UPDATE global_id_sequence SET next_block_start = next_block_start + 1000 " --> G[(Database)]
+        G -- " Return new block end " --> H["3b. Refresh in-memory range"]
         H --> E
     end
 
-    E -- " 4. Return unique numerical ID " --> I(ShortCodeGenerator)
+    E -- " 4. Shuffle + Base62 " --> I(7-character short code)
 ```
 
-## Short URL Redirection Flow
+### Redirection
 
 ```mermaid
 graph TD
     ClientR[Client] -- " HTTP GET /{shortCode} " --> RedirCtrl[RedirectController]
     RedirCtrl --> Resolv[UrlResolverService]
-    Resolv -- " 1. Check Cache " --> Cache[[Cache: Redis]]
-    Resolv -- " 2. Cache Miss: Query " --> RepoR[UrlRepository]
+    Resolv -- " 1. Check cache " --> Cache[[Cache: Redis]]
+    Resolv -- " 2. Cache miss: query " --> RepoR[UrlRepository]
     RepoR --> DBR[(Database)]
     Cache -.->|If found| Resolv
 ```
 
-### ✨ Features & Limitations
+## Analytics
 
-##### Features
+Clicks are counted per link, per hour and per day, split by device type (parsed from the User-Agent). Only aggregated
+counts are stored: no IP addresses and no raw User-Agent strings.
 
-- ✅ **Base62 Encoding:** Short, URL-friendly codes.
-- ✅ **Expiration Support:** Links automatically expire based on user input.
-- ✅ **Stat information:** Get detailed information on statistics of links.
-- ✅ **Global Error Handling:** Consistent JSON error responses.
-- ✅ **Flyway Migrations:** Versioned database schema.
+`GET /api/v1/urls/{shortCode}/stats`
 
-##### Roadmap
+| Parameter     | Description                                                       | Default value                                        |
+|:--------------|:------------------------------------------------------------------|:-----------------------------------------------------|
+| `granularity` | Time bucket size: `HOUR` or `DAY`                                 | `DAY`                                                |
+| `from`        | Start date (ISO-8601). If omitted, defaults based on granularity. | `NOW - 30 days` (daily)<br>`NOW - 24 hours` (hourly) |
+| `to`          | End date (ISO-8601).                                              | `NOW`                                                |
 
-- 🚧 Custom aliases (e.g., /my-promo-link).
-- 🚧 Rate limiting per IP.
-- ✅ UI.
+**Example request:**
+`GET /api/v1/urls/abc1234/stats?granularity=hour&from=2023-10-27T00:00:00Z`
 
-### 🛠Tech Stack
+`GET /api/v1/urls/stats/top` returns the 10 most-clicked links.
+
+## Development and testing
+
+| Command                       | Action                                                                                  |
+|-------------------------------|-----------------------------------------------------------------------------------------|
+| `make run-docker`             | Starts the entire stack (backend, frontend, DB, Redis) in containers, `local` profile.  |
+| `docker compose up --build`   | Starts the entire stack in containers (manual command).                                 |
+| `make run-backend`            | Starts MySQL and Redis in Docker, then the backend.                                     |
+| `make run-frontend`           | Starts the Next.js frontend.                                                            |
+| `make run-all`                | Starts backend and frontend together.                                                   |
+| `make stop`                   | Stops the application and its dependencies.                                             |
+| `make test`                   | Runs unit and integration tests. Integration tests need MySQL (port 3106) and Redis running, e.g. via `docker compose up -d mysql redis`. |
+| `make build`                  | Builds the application JAR and a Docker image.                                          |
+| `make clean`                  | Cleans the build artifacts.                                                             |
+| `make format`                 | Formats the code with Ktlint.                                                           |
+| `make check`                  | Checks the code style with Ktlint.                                                      |
+| `make logs`                   | Tails the logs of the `mysql` and `redis` containers.                                   |
+| `make health`                 | Checks the health of the application.                                                   |
+| `make shorten url=<url here>` | Shortens a URL. Without `url`, it uses `https://example.com`.                           |
+
+Tests: unit tests (`...Test.kt`) cover the shuffle, the code generator and the service logic; integration tests
+(`...IT.kt`) cover the controllers, services and repository against real MySQL and Redis.
+
+### Development data seeding
+
+With the `local` profile, the application seeds the database with sample URLs and randomized click traffic over the
+past 30 days, to make the analytics views useful.
+
+### Prerequisites
+
+- Java 21
+- Gradle (or the Gradle wrapper)
+- Docker (for MySQL and Redis)
+- make
+- npm (for the frontend)
+
+## Tech stack
 
 ![Kotlin](https://img.shields.io/badge/Kotlin-JVM%20--%20Backend-blueviolet?logo=kotlin)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.x-brightgreen?logo=springboot)
@@ -219,31 +240,11 @@ graph TD
 ![React](https://img.shields.io/badge/React-Library-blue?logo=react)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind-Styling-38B2AC?logo=tailwind-css)
 
-#### 🛠 Development Data Seeding
+## Frontend UI
 
-When running in the `local` profile, the application automatically seeds the database with:
+A small Next.js frontend to shorten links and view statistics.
 
-1. **Sample URLs:** A set of predefined and random URLs and stats are loaded.
-2. **Randomized Traffic:** Realistic click traffic distributed over the past 30 days for testing analytics
-   visualization.
-
-### Pre-requisites
-
-- Java 21
-- Gradle (or Gradle Wrapper)
-- Docker (for running MySQL and Redis)
-- make
-- npm (for frontend)
-
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-
-### 💻 Frontend UI
-
-The project includes a modern React/Next.js frontend for easy interaction with the service.
-
-#### Running the UI
-
-1. Navigate to the UI directory:
+1. Go to the UI directory:
    ```bash
    cd tiny-ui
    ```
@@ -255,27 +256,29 @@ The project includes a modern React/Next.js frontend for easy interaction with t
    ```bash
    npm run dev
    ```
-4. Open [http://localhost:3000](http://localhost:3000) in your browser.
+4. Open [http://localhost:3000](http://localhost:3000).
 
-   > **💡 Tip:** To see the analytics visualization with seeded data, enter one of these short codes in the search box:
+   > **Tip:** on a freshly seeded database, these short codes have analytics data:
    > - `0N6MIoU`
    > - `02V71pQ`
    > - `09CoWdf`
    > - `0LEMExa`
 
-#### 📸 Screenshots
+### Screenshots
 
-|                    **Dashboard**                     |              **QR Code and expiary**               |
+|                    **Dashboard**                     |             **QR code and expiry**                 |
 |:----------------------------------------------------:|:--------------------------------------------------:|
 |   ![Main Page](assets/mainpagewithexpiarydate.png)   | ![After shortening](assets/mainpagewithqrcode.png) |
-| **Simple interface to shorten URLs with Expiration** |       the qr code generation in cliend side        |
+|       **Shorten URLs with an optional expiry**       |        **QR code generated on the client**         |
 
-|           **Hourly Details**           |           **Daily Stats**            |
+|           **Hourly details**           |           **Daily stats**            |
 |:--------------------------------------:|:------------------------------------:|
 | ![Hourly Stats](assets/hourlystat.png) | ![Daily Stats](assets/dailystat.png) |
-|    **Granular hourly traffic view**    |     **Track daily clicks trend**     |
+|      **Hourly traffic per link**       |     **Daily clicks trend**           |
 
-|       **Top Performing Links**        | **Device Distribution**                         |
+|       **Top links**                   | **Device distribution**                         |
 |:-------------------------------------:|-------------------------------------------------|
 | ![Top 10 Links](assets/top10page.png) | ![Monthly Device Stats](assets/monthlystat.png) |
-|      **View most popular URLs**       | **Monthly breakdown by device type**            |
+|       **Most-clicked links**          | **Monthly breakdown by device type**            |
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
